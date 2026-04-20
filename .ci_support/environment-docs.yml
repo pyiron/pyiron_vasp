@@ -10,7 +10,7 @@ dependencies:
 - defusedxml =0.7.1
 - matplotlib-base =3.10.8
 - numpy =2.4.3
-- pandas =3.0.1
+- pandas =3.0.2
 - scipy =1.17.1
 - jupyter-book =1.0.0
 - hatchling =1.29.0
