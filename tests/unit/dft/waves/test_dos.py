@@ -27,7 +27,7 @@ class TestDos(unittest.TestCase):
             direc = os.path.abspath(
                 os.path.join(
                     os.path.dirname(os.path.abspath(__file__)),
-                    "../../static/vasp_test_files/vasprun_samples",
+                    "../../../static/vasp_test_files/vasprun_samples",
                 )
             )
             filename = posixpath.join(direc, f)

@@ -68,4 +68,4 @@ path = "src/vaspparser/_version.py"
 
 [tool.coverage.run]
 source = ["vaspparser"]
-command_line = "-m unittest discover tests"
+command_line = "-m unittest discover tests/unit"

@@ -19,7 +19,7 @@ class TestOutcar(unittest.TestCase):
         file_list = os.listdir(
             os.path.abspath(
                 os.path.join(
-                    cls.file_location, "../static/vasp_test_files/outcar_samples"
+                    cls.file_location, "../../static/vasp_test_files/outcar_samples"
                 )
             )
         )
@@ -27,7 +27,7 @@ class TestOutcar(unittest.TestCase):
         for f in file_list:
             direc = os.path.abspath(
                 os.path.join(
-                    cls.file_location, "../static/vasp_test_files/outcar_samples"
+                    cls.file_location, "../../static/vasp_test_files/outcar_samples"
                 )
             )
             filename = posixpath.join(direc, f)
@@ -2145,7 +2145,7 @@ class TestOutcar(unittest.TestCase):
             Outcar().from_file(
                 os.path.join(
                     self.file_location,
-                    "../static/vasp_test_files/outcar_without_nions/OUTCAR",
+                    "../../static/vasp_test_files/outcar_without_nions/OUTCAR",
                 )
             )
 
@@ -2157,8 +2157,8 @@ class TestOutcar(unittest.TestCase):
         # We want to be able to restart any job, so errors on collect must be silenced or be of the VaspCollectError,
         # which is caught during restart
         test_folders = [
-            "../static/vasp_test_files/full_job_aborted",
-            "../static/vasp_test_files/outcar_without_nions",
+            "../../static/vasp_test_files/full_job_aborted",
+            "../../static/vasp_test_files/outcar_without_nions",
         ]
         for folder in test_folders:
             with self.subTest(folder=folder):

@@ -18,14 +18,14 @@ class TestOszicar(unittest.TestCase):
         file_list = os.listdir(
             os.path.abspath(
                 os.path.join(
-                    cls.file_location, "../static/vasp_test_files/oszicar_samples"
+                    cls.file_location, "../../static/vasp_test_files/oszicar_samples"
                 )
             )
         )
         for f in file_list:
             direc = os.path.abspath(
                 os.path.join(
-                    cls.file_location, "../static/vasp_test_files/oszicar_samples"
+                    cls.file_location, "../../static/vasp_test_files/oszicar_samples"
                 )
             )
             filename = posixpath.join(direc, f)

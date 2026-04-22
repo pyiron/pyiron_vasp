@@ -23,7 +23,7 @@ class TestVasprun(unittest.TestCase):
         cls.file_location = os.path.dirname(os.path.abspath(__file__))
         cls.vp_list = list()
         cls.direc = os.path.join(
-            cls.file_location, "../static/vasp_test_files/vasprun_samples"
+            cls.file_location, "../../static/vasp_test_files/vasprun_samples"
         )
         file_list = sorted(os.listdir(cls.direc))
         del file_list[file_list.index("vasprun_spoilt.xml")]
