@@ -20,11 +20,13 @@ class TestBader(unittest.TestCase):
     def setUpClass(cls):
         cls.file_location = os.path.dirname(os.path.abspath(__file__))
         cls.bader_test_path = os.path.join(
-            cls.file_location, "../static/vasp_test_files/bader_test"
+            cls.file_location, "../../static/vasp_test_files/bader_test"
         )
 
     def test_parse_charge_vol(self):
-        filename = os.path.join(self.file_location, "../static/dft/bader_files/ACF.dat")
+        filename = os.path.join(
+            self.file_location, "../../static/dft/bader_files/ACF.dat"
+        )
         struct = read_atoms(os.path.join(self.bader_test_path, "POSCAR"))
         charges, volumes = parse_charge_vol_file(structure=struct, filename=filename)
         self.assertTrue(np.allclose(charges, [0.438202, 0.438197, 7.143794]))

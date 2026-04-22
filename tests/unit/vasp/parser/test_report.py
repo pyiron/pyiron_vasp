@@ -13,7 +13,7 @@ class TestReportParser(unittest.TestCase):
         self.parser = Report()
         self.file_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            "../../static/vasp_test_files/REPORT_for_test",
+            "../../../static/vasp_test_files/REPORT_for_test",
         )
 
     def test_from_file(self):

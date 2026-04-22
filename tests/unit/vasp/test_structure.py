@@ -28,7 +28,7 @@ class TestVaspStructure(unittest.TestCase):
     def setUpClass(cls):
         cls.file_location = os.path.dirname(os.path.abspath(__file__))
         poscar_directory = os.path.join(
-            cls.file_location, "../static/vasp_test_files/poscar_samples"
+            cls.file_location, "../../static/vasp_test_files/poscar_samples"
         )
         file_list = os.listdir(poscar_directory)
         cls.file_list = [posixpath.join(poscar_directory, f) for f in file_list]

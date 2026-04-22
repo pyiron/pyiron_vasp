@@ -19,7 +19,7 @@ class TestMoreOutput(unittest.TestCase):
     def setUp(self):
         self.output = Output()
         self.vasp_test_files_path = os.path.join(
-            os.path.dirname(__file__), "../static/vasp_test_files"
+            os.path.dirname(__file__), "../../static/vasp_test_files"
         )
         self.full_job_sample_path = os.path.join(
             self.vasp_test_files_path, "full_job_sample"

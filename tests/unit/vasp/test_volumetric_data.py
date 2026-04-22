@@ -18,7 +18,7 @@ class TestVaspVolumetricData(unittest.TestCase):
     def setUpClass(cls):
         cls.file_location = os.path.dirname(os.path.abspath(__file__))
         vol_directory = os.path.join(
-            cls.file_location, "../static/vasp_test_files/chgcar_samples"
+            cls.file_location, "../../static/vasp_test_files/chgcar_samples"
         )
         file_list = os.listdir(vol_directory)
         cls.file_list = [posixpath.join(vol_directory, f) for f in file_list]

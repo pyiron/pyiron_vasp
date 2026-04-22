@@ -30,7 +30,7 @@ class TestElectronicStructure(unittest.TestCase):
             direc = os.path.abspath(
                 os.path.join(
                     os.path.dirname(os.path.abspath(__file__)),
-                    "../../static/vasp_test_files/vasprun_samples",
+                    "../../../static/vasp_test_files/vasprun_samples",
                 )
             )
             filename = posixpath.join(direc, f)
@@ -42,9 +42,9 @@ class TestElectronicStructure(unittest.TestCase):
     def tearDownClass(cls):
         file_location = os.path.dirname(os.path.abspath(__file__))
         if os.path.isfile(
-            os.path.join(file_location, "../../static/dft/test_es_hdf.h5")
+            os.path.join(file_location, "../../../static/dft/test_es_hdf.h5")
         ):
-            os.remove(os.path.join(file_location, "../../static/dft/test_es_hdf.h5"))
+            os.remove(os.path.join(file_location, "../../../static/dft/test_es_hdf.h5"))
 
     def test_init(self):
         for es in self.es_list:
