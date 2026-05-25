@@ -90,7 +90,7 @@ class Vasprun:
             if leaf.tag in ["atominfo"]:
                 d[leaf.tag] = {}
                 self.parse_atom_information_to_dict(leaf, d[leaf.tag])
-            if leaf.tag in ["structure"] and "name" in leaf:
+            if leaf.tag in ["structure"] and "name" in leaf.attrib:
                 if "initialpos" in leaf.attrib["name"]:
                     d["init_structure"] = {}
                     self.parse_structure_to_dict(leaf, d["init_structure"])
