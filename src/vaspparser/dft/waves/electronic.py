@@ -594,19 +594,13 @@ class ElectronicStructure:
         output_string = []
         output_string.append("ElectronicStructure Instance")
         output_string.append("----------------------------")
-        output_string.append(
-            f"Number of spin channels: {len(self.eigenvalue_matrix)}"
-        )
+        output_string.append(f"Number of spin channels: {len(self.eigenvalue_matrix)}")
         output_string.append(f"Number of k-points: {len(self.kpoints)}")
-        output_string.append(
-            f"Number of bands: {len(self.kpoints[0].bands[0])}"
-        )
+        output_string.append(f"Number of bands: {len(self.kpoints[0].bands[0])}")
         try:
             for spin, is_metal in enumerate(self.is_metal):
                 if is_metal:
-                    output_string.append(
-                        f"spin {spin}:" + f" Is a metal: {is_metal}"
-                    )
+                    output_string.append(f"spin {spin}:" + f" Is a metal: {is_metal}")
                 else:
                     output_string.append(
                         f"spin {spin}:"

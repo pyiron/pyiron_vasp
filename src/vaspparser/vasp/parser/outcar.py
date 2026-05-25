@@ -345,10 +345,14 @@ class Outcar:
                 trigger_number_alt = int(i) + 1
             elif trigger_number_alt != 0 and trigger_number_str_total in line:
                 trigger_number_alt_total = int(i) - 1
-            elif planewaves and (
-                trigger_plane_waves_str in line
-                or trigger_plane_waves_alt_str in line
-            ) and "plane waves: " in line:
+            elif (
+                planewaves
+                and (
+                    trigger_plane_waves_str in line
+                    or trigger_plane_waves_alt_str in line
+                )
+                and "plane waves: " in line
+            ):
                 trigger_plane_waves = int(i)
         if trigger_number != 0:
             number_irr_kpoints = int(lines[trigger_number + 3].split()[1])
@@ -572,11 +576,16 @@ class Outcar:
                                 float(spin_str_lst[2]),
                             ]
                         else:
-                            warnings.warn("Unrecognized spin configuration.", stacklevel=2)
+                            warnings.warn(
+                                "Unrecognized spin configuration.", stacklevel=2
+                            )
                             return mag_lst, final_magmom_lst
                         istep_energies.append(ene)
                 except ValueError:
-                    warnings.warn("Something went wrong in parsing the magnetization", stacklevel=2)
+                    warnings.warn(
+                        "Something went wrong in parsing the magnetization",
+                        stacklevel=2,
+                    )
             if n_atoms is None and nion_trigger in line:
                 n_atoms = int(line.split(nion_trigger)[-1])
             if local_spin_trigger:
@@ -591,7 +600,8 @@ class Outcar:
                             )
                 except ValueError:
                     warnings.warn(
-                        "Something went wrong in parsing the magnetic moments", stacklevel=2
+                        "Something went wrong in parsing the magnetic moments",
+                        stacklevel=2,
                     )
         if len(mag_dict["x"]) > 0:
             if len(mag_dict["y"]) == 0:
@@ -624,7 +634,8 @@ class Outcar:
             line_ngx = lines[trigger_indices[0] - 2]
         else:
             warnings.warn(
-                "Unable to parse the Broyden mixing mesh. Returning 0 instead", stacklevel=2
+                "Unable to parse the Broyden mixing mesh. Returning 0 instead",
+                stacklevel=2,
             )
             return 0
         # Exclude all alphabets, and spaces. Then split based on '='
@@ -657,7 +668,9 @@ class Outcar:
                 try:
                     temperatures.append(float(output_string))
                 except ValueError:
-                    warnings.warn(f"Temperature too high. Vasp output: {line}", stacklevel=2)
+                    warnings.warn(
+                        f"Temperature too high. Vasp output: {line}", stacklevel=2
+                    )
                     temperatures.append(np.nan)
         else:
             temperatures = np.zeros(
@@ -1118,7 +1131,9 @@ class Outcar:
                 cells.append(cell)
             return np.array(cells)
         except ValueError:
-            warnings.warn("Unable to parse the cells from the OUTCAR file", stacklevel=2)
+            warnings.warn(
+                "Unable to parse the cells from the OUTCAR file", stacklevel=2
+            )
             return
 
     @staticmethod

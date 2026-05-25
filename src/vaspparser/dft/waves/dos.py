@@ -70,9 +70,7 @@ class Dos:
         ax1.set_xlabel("E (eV)", fontsize=14)
         ax1.set_ylabel("DOS", fontsize=14)
         for i, energies in enumerate(self.energies):
-            plt.fill_between(
-                energies, self.t_dos[i], label=f"spin {i}", **kwargs
-            )
+            plt.fill_between(energies, self.t_dos[i], label=f"spin {i}", **kwargs)
         plt.legend()
         return plt
 
@@ -99,9 +97,7 @@ class Dos:
         for spin in range(len(self.energies)):
             for key, val in self.orbital_dict.items():
                 r_dos = self.get_orbital_resolved_dos(val)
-                plt.plot(
-                    self.energies, r_dos, label=key + f"spin {spin}", **kwargs
-                )
+                plt.plot(self.energies, r_dos, label=key + f"spin {spin}", **kwargs)
         plot.legend()
         return plot
 

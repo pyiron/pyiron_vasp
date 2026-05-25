@@ -46,7 +46,9 @@ def read_atoms(
     if (species_list is None) and species_from_potcar:
         species_list = get_species_list_from_potcar(potcar_file)
         if len(species_list) == 0:
-            warnings.warn("Warning! Unable to read species information from POTCAR", stacklevel=2)
+            warnings.warn(
+                "Warning! Unable to read species information from POTCAR", stacklevel=2
+            )
     file_string = []
     with open(filename) as f:
         for line in f:
@@ -173,9 +175,7 @@ def get_poscar_content(structure, write_species=True, cartesian=True):
         for i, vec in enumerate(sorted_coords):
             x, y, z = vec
             sd_string = " ".join(["T" if sd else "F" for sd in selec_dyn_lst[i]])
-            line_lst.append(
-                f"{x:.15f} {y:.15f} {z:.15f}" + " " + sd_string + endline
-            )
+            line_lst.append(f"{x:.15f} {y:.15f} {z:.15f}" + " " + sd_string + endline)
     else:
         for i, vec in enumerate(sorted_coords):
             x, y, z = vec
@@ -238,10 +238,7 @@ def atoms_from_string(string, read_velocities=False, species_list=None):
     positions = []
     selective_dynamics = []
     n_atoms = sum(
-        [
-            atoms_dict["species_dict"][key]["count"]
-            for key in atoms_dict["species_dict"]
-        ]
+        [atoms_dict["species_dict"][key]["count"] for key in atoms_dict["species_dict"]]
     )
     try:
         for i in range(position_index, position_index + n_atoms):
@@ -328,7 +325,8 @@ def atoms_from_string(string, read_velocities=False, species_list=None):
             warnings.warn(
                 "The velocities are either not available or they are incomplete/corrupted. Returning empty "
                 "list instead",
-                UserWarning, stacklevel=2,
+                UserWarning,
+                stacklevel=2,
             )
             return atoms, []
         return atoms, velocities

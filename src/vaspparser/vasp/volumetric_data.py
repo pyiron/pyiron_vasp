@@ -79,7 +79,9 @@ class VaspVolumetricData(VolumetricData):
 
         """
         if os.stat(filename).st_size == 0:
-            warnings.warn("File:" + filename + "seems to be corrupted/empty", stacklevel=2)
+            warnings.warn(
+                "File:" + filename + "seems to be corrupted/empty", stacklevel=2
+            )
             return None, None
         poscar_read = False
         poscar_string = []
@@ -139,7 +141,9 @@ class VaspVolumetricData(VolumetricData):
             if not normalize:
                 volume = 1.0
             if len(all_dataset) == 0:
-                warnings.warn("File:" + filename + "seems to be corrupted/empty", stacklevel=2)
+                warnings.warn(
+                    "File:" + filename + "seems to be corrupted/empty", stacklevel=2
+                )
                 return None, None
             if len(all_dataset) == 2:
                 data = {
@@ -225,7 +229,8 @@ class VaspVolumetricData(VolumetricData):
                 warnings.warn(
                     "File:"
                     + filename
-                    + "seems to be corrupted/empty even after parsing!", stacklevel=2
+                    + "seems to be corrupted/empty even after parsing!",
+                    stacklevel=2,
                 )
                 return None, None
             return atoms, total_data_list

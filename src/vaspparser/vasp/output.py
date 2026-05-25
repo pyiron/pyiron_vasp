@@ -1,4 +1,3 @@
-
 import contextlib
 import os
 import posixpath
@@ -80,7 +79,9 @@ class Output:
                 self.outcar.from_file(filename=posixpath.join(directory, "OUTCAR"))
                 outcar_working = True
             except OutcarCollectError as e:
-                warnings.warn(f"OUTCAR present, but could not be parsed: {e}!", stacklevel=2)
+                warnings.warn(
+                    f"OUTCAR present, but could not be parsed: {e}!", stacklevel=2
+                )
                 outcar_working = False
         if "vasprun.xml" in files_present:
             try:
@@ -93,11 +94,13 @@ class Output:
                         warnings.warn(
                             "vasprun.xml parsed but with some inconsistencies. "
                             "Check vasp output to be sure",
-                            VasprunWarning, stacklevel=2,
+                            VasprunWarning,
+                            stacklevel=2,
                         )
             except VasprunError:
                 warnings.warn(
-                    "Unable to parse the vasprun.xml file. Will attempt to get data from OUTCAR", stacklevel=2
+                    "Unable to parse the vasprun.xml file. Will attempt to get data from OUTCAR",
+                    stacklevel=2,
                 )
             else:
                 # If parsing the vasprun file does not throw an error, then set to True
@@ -212,9 +215,13 @@ class Output:
             log_dict["positions"] = self.outcar.parse_dict["positions"]
             log_dict["forces"][:, sorted_indices] = log_dict["forces"].copy()
             log_dict["positions"][:, sorted_indices] = log_dict["positions"].copy()
-            if len(log_dict["positions"].shape) != 3 or log_dict["positions"].shape[1] != len(sorted_indices):
+            if len(log_dict["positions"].shape) != 3 or log_dict["positions"].shape[
+                1
+            ] != len(sorted_indices):
                 raise VaspCollectError("Improper OUTCAR parsing")
-            if len(log_dict["forces"].shape) != 3 or log_dict["forces"].shape[1] != len(sorted_indices):
+            if len(log_dict["forces"].shape) != 3 or log_dict["forces"].shape[1] != len(
+                sorted_indices
+            ):
                 raise VaspCollectError("Improper OUTCAR parsing")
             log_dict["time"] = self.outcar.parse_dict["time"]
             log_dict["steps"] = self.outcar.parse_dict["steps"]
