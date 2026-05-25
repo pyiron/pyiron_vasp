@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright (c) Max-Planck-Institut für Eisenforschung GmbH - Computational Materials Design (CM) Department
 # Distributed under the terms of "New BSD License", see the LICENSE file.
 
@@ -16,7 +15,7 @@ __status__ = "production"
 __date__ = "Sep 1, 2020"
 
 
-class Oszicar(object):
+class Oszicar:
     """
     This module is used to parse VASP OSZICAR files.
 
@@ -28,17 +27,17 @@ class Oszicar(object):
     """
 
     def __init__(self):
-        self.parse_dict = dict()
+        self.parse_dict = {}
 
     def from_file(self, filename="OSZICAR"):
-        with open(filename, "r", errors="ignore") as f:
+        with open(filename, errors="ignore") as f:
             lines = f.readlines()
         self.parse_dict["energy_pot"] = self.get_energy_pot(lines)
 
     @staticmethod
     def get_energy_pot(lines):
         trigger = "F="
-        energy_list = list()
+        energy_list = []
         for i, line in enumerate(lines):
             line = line.strip()
             if trigger in line:

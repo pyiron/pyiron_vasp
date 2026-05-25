@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright (c) Max-Planck-Institut für Eisenforschung GmbH - Computational Materials Design (CM) Department
 # Distributed under the terms of "New BSD License", see the LICENSE file.
 
@@ -17,13 +16,13 @@ __status__ = "production"
 __date__ = "Mar 1, 2020"
 
 
-class Report(object):
+class Report:
     """
     This module is used to parse VASP REPORT files
     """
 
     def __init__(self):
-        self.parse_dict = dict()
+        self.parse_dict = {}
 
     def from_file(self, filename="REPORT"):
         """
@@ -32,16 +31,14 @@ class Report(object):
         Args:
             filename (str): Path to the file that needs to be parsed
         """
-        with open(filename, "r", errors="ignore") as f:
+        with open(filename, errors="ignore") as f:
             lines = f.readlines()
         rel_lines = [
             lines[i + 2] for i, line in enumerate(lines) if "Blue_moon" in line
         ]
         if len(rel_lines) > 0:
-            [lam, _, _, _] = [
-                val for val in np.genfromtxt(rel_lines, usecols=[1, 2, 3, 4]).T
-            ]
-            rel_lines = [lines[i] for i, line in enumerate(lines) if "cc>" in line]
+            [lam, _, _, _] = list(np.genfromtxt(rel_lines, usecols=[1, 2, 3, 4]).T)
+            rel_lines = [line for i, line in enumerate(lines) if "cc>" in line]
             cv = np.genfromtxt(rel_lines, usecols=[2])
             fe = cumulative_trapezoid(lam, cv)
             self.parse_dict["cv_full"] = cv

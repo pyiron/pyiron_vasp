@@ -1,5 +1,5 @@
-from __future__ import print_function
 
+import contextlib
 import os
 import posixpath
 import warnings
@@ -69,10 +69,10 @@ class Output:
         if sorted_indices is None:
             sorted_indices = vasp_sorter(self.structure)
         files_present = os.listdir(directory)
-        log_dict = dict()
+        log_dict = {}
         vasprun_working, outcar_working = False, False
         if not ("OUTCAR" in files_present or "vasprun.xml" in files_present):
-            raise IOError("Either the OUTCAR or vasprun.xml files need to be present")
+            raise OSError("Either the OUTCAR or vasprun.xml files need to be present")
         if "OSZICAR" in files_present:
             self.oszicar.from_file(filename=posixpath.join(directory, "OSZICAR"))
         if "OUTCAR" in files_present:
@@ -80,7 +80,7 @@ class Output:
                 self.outcar.from_file(filename=posixpath.join(directory, "OUTCAR"))
                 outcar_working = True
             except OutcarCollectError as e:
-                warnings.warn(f"OUTCAR present, but could not be parsed: {e}!")
+                warnings.warn(f"OUTCAR present, but could not be parsed: {e}!", stacklevel=2)
                 outcar_working = False
         if "vasprun.xml" in files_present:
             try:
@@ -89,15 +89,15 @@ class Output:
                     self.vp_new.from_file(
                         filename=posixpath.join(directory, "vasprun.xml")
                     )
-                    if any([isinstance(warn.category, VasprunWarning) for warn in w]):
+                    if any(isinstance(warn.category, VasprunWarning) for warn in w):
                         warnings.warn(
                             "vasprun.xml parsed but with some inconsistencies. "
                             "Check vasp output to be sure",
-                            VasprunWarning,
+                            VasprunWarning, stacklevel=2,
                         )
             except VasprunError:
                 warnings.warn(
-                    "Unable to parse the vasprun.xml file. Will attempt to get data from OUTCAR"
+                    "Unable to parse the vasprun.xml file. Will attempt to get data from OUTCAR", stacklevel=2
                 )
             else:
                 # If parsing the vasprun file does not throw an error, then set to True
@@ -163,7 +163,7 @@ class Output:
                 # total energies refers here to the total energy of the electronic system, not the total system of
                 # electrons plus (potentially) moving ions; hence this is the energy_pot
                 log_dict["energy_pot"] = self.vp_new.vasprun_dict["total_fr_energies"]
-            if "kinetic_energies" in self.vp_new.vasprun_dict.keys():
+            if "kinetic_energies" in self.vp_new.vasprun_dict:
                 log_dict["energy_tot"] = (
                     log_dict["energy_pot"]
                     + self.vp_new.vasprun_dict["kinetic_energies"]
@@ -212,13 +212,9 @@ class Output:
             log_dict["positions"] = self.outcar.parse_dict["positions"]
             log_dict["forces"][:, sorted_indices] = log_dict["forces"].copy()
             log_dict["positions"][:, sorted_indices] = log_dict["positions"].copy()
-            if len(log_dict["positions"].shape) != 3:
+            if len(log_dict["positions"].shape) != 3 or log_dict["positions"].shape[1] != len(sorted_indices):
                 raise VaspCollectError("Improper OUTCAR parsing")
-            elif log_dict["positions"].shape[1] != len(sorted_indices):
-                raise VaspCollectError("Improper OUTCAR parsing")
-            if len(log_dict["forces"].shape) != 3:
-                raise VaspCollectError("Improper OUTCAR parsing")
-            elif log_dict["forces"].shape[1] != len(sorted_indices):
+            if len(log_dict["forces"].shape) != 3 or log_dict["forces"].shape[1] != len(sorted_indices):
                 raise VaspCollectError("Improper OUTCAR parsing")
             log_dict["time"] = self.outcar.parse_dict["time"]
             log_dict["steps"] = self.outcar.parse_dict["steps"]
@@ -303,14 +299,13 @@ class Output:
                 ]
             )
             # Overwrite energy_free with much better precision from the OSZICAR file
-            if "energy_pot" in self.oszicar.parse_dict.keys():
-                if np.array_equal(
-                    self.generic_output.dft_log_dict["energy_free"],
-                    np.round(self.oszicar.parse_dict["energy_pot"], 8),
-                ):
-                    self.generic_output.dft_log_dict["energy_free"] = (
-                        self.oszicar.parse_dict["energy_pot"]
-                    )
+            if "energy_pot" in self.oszicar.parse_dict and np.array_equal(
+                self.generic_output.dft_log_dict["energy_free"],
+                np.round(self.oszicar.parse_dict["energy_pot"], 8),
+            ):
+                self.generic_output.dft_log_dict["energy_free"] = (
+                    self.oszicar.parse_dict["energy_pot"]
+                )
             self.generic_output.dft_log_dict["energy_zero"] = np.array(
                 [
                     e_zero[-1]
@@ -320,7 +315,7 @@ class Output:
             self.generic_output.dft_log_dict["n_elect"] = float(
                 self.vp_new.vasprun_dict["parameters"]["electronic"]["NELECT"]
             )
-            if "kinetic_energies" in self.vp_new.vasprun_dict.keys():
+            if "kinetic_energies" in self.vp_new.vasprun_dict:
                 # scf_energy_kin is for backwards compatibility
                 self.generic_output.dft_log_dict["scf_energy_kin"] = (
                     self.vp_new.vasprun_dict["kinetic_energies"]
@@ -383,8 +378,8 @@ class GenericOutput:
     """
 
     def __init__(self):
-        self.log_dict = dict()
-        self.dft_log_dict = dict()
+        self.log_dict = {}
+        self.dft_log_dict = {}
         self.description = "generic_output contains generic output static"
         self._bands = ElectronicStructure()
 
@@ -440,7 +435,7 @@ def parse_vasp_output(
                 filename="CONTCAR",
                 read_atoms_funct=read_atoms_funct,
             )
-        except IOError:
+        except OSError:
             structure = get_final_structure_from_file(
                 working_directory=working_directory,
                 filename="POSCAR",
@@ -458,7 +453,7 @@ def parse_vasp_output(
     except VaspCollectError:
         raise
     # Try getting high precision positions from CONTCAR
-    try:
+    with contextlib.suppress(IOError, ValueError, FileNotFoundError):
         output_parser.structure = get_final_structure_from_file(
             working_directory=working_directory,
             filename="CONTCAR",
@@ -466,8 +461,6 @@ def parse_vasp_output(
             sorted_indices=sorted_indices,
             read_atoms_funct=read_atoms_funct,
         )
-    except (IOError, ValueError, FileNotFoundError):
-        pass
 
     # Bader analysis
     if os.path.isfile(os.path.join(working_directory, "AECCAR0")) and os.path.isfile(
@@ -477,12 +470,12 @@ def parse_vasp_output(
         try:
             charges_orig, volumes_orig = bader.compute_bader_charges()
         except ValueError:
-            warnings.warn("Invoking Bader charge analysis failed")
+            warnings.warn("Invoking Bader charge analysis failed", stacklevel=2)
         else:
             charges, volumes = charges_orig.copy(), volumes_orig.copy()
             charges[sorted_indices] = charges_orig
             volumes[sorted_indices] = volumes_orig
-            if "valence_charges" in output_parser.generic_output.dft_log_dict.keys():
+            if "valence_charges" in output_parser.generic_output.dft_log_dict:
                 valence_charges = output_parser.generic_output.dft_log_dict[
                     "valence_charges"
                 ]
@@ -517,8 +510,8 @@ def get_final_structure_from_file(
         try:
             output_structure = read_atoms_funct(filename=filename)
             input_structure = output_structure.copy()
-        except (IndexError, ValueError, IOError):
-            raise IOError("Unable to read output structure")
+        except (OSError, IndexError, ValueError):
+            raise OSError("Unable to read output structure")
     else:
         input_structure = structure.copy()
         if type(input_structure) == Atoms:
@@ -532,6 +525,6 @@ def get_final_structure_from_file(
             )
             input_structure.cell = output_structure.cell.copy()
             input_structure.positions[sorted_indices] = output_structure.positions
-        except (IndexError, ValueError, IOError):
-            raise IOError("Unable to read output structure")
+        except (OSError, IndexError, ValueError):
+            raise OSError("Unable to read output structure")
     return input_structure

@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright (c) Max-Planck-Institut für Eisenforschung GmbH - Computational Materials Design (CM) Department
 # Distributed under the terms of "New BSD License", see the LICENSE file.
 
@@ -30,7 +29,7 @@ class OutcarCollectError(ValueError):
     pass
 
 
-class Outcar(object):
+class Outcar:
     """
     This module is used to parse VASP OUTCAR files.
 
@@ -42,7 +41,7 @@ class Outcar(object):
     """
 
     def __init__(self):
-        self.parse_dict = dict()
+        self.parse_dict = {}
 
     def from_file(self, filename="OUTCAR"):
         """
@@ -52,7 +51,7 @@ class Outcar(object):
             filename (str): Filename of the OUTCAR file to parse
 
         """
-        with open(filename, "r", errors="ignore") as f:
+        with open(filename, errors="ignore") as f:
             lines = f.readlines()
         energies = self.get_total_energies(filename=filename, lines=lines)
         energies_int = self.get_energy_without_entropy(filename=filename, lines=lines)
@@ -150,7 +149,7 @@ class Outcar(object):
             "energy_components",
             "resources",
         ]
-        for key in self.parse_dict.keys():
+        for key in self.parse_dict:
             if key in unique_quantities:
                 output_dict[key] = self.parse_dict[key]
         return output_dict
@@ -346,12 +345,11 @@ class Outcar(object):
                 trigger_number_alt = int(i) + 1
             elif trigger_number_alt != 0 and trigger_number_str_total in line:
                 trigger_number_alt_total = int(i) - 1
-            elif planewaves:
-                if (
-                    trigger_plane_waves_str in line
-                    or trigger_plane_waves_alt_str in line
-                ) and "plane waves: " in line:
-                    trigger_plane_waves = int(i)
+            elif planewaves and (
+                trigger_plane_waves_str in line
+                or trigger_plane_waves_alt_str in line
+            ) and "plane waves: " in line:
+                trigger_plane_waves = int(i)
         if trigger_number != 0:
             number_irr_kpoints = int(lines[trigger_number + 3].split()[1])
             if reciprocal:
@@ -541,21 +539,21 @@ class Outcar(object):
         ionic_trigger = "FREE ENERGIE OF THE ION-ELECTRON SYSTEM (eV)"
         electronic_trigger = "eigenvalue-minimisations"
         nion_trigger = "NIONS ="
-        mag_lst = list()
+        mag_lst = []
         local_spin_trigger = False
         n_atoms = None
-        mag_dict = dict()
-        mag_dict["x"] = list()
-        mag_dict["y"] = list()
-        mag_dict["z"] = list()
+        mag_dict = {}
+        mag_dict["x"] = []
+        mag_dict["y"] = []
+        mag_dict["z"] = []
         lines = _get_lines_from_file(filename=filename, lines=lines)
-        istep_energies = list()
-        final_magmom_lst = list()
+        istep_energies = []
+        final_magmom_lst = []
         for i, line in enumerate(lines):
             line = line.strip()
             if ionic_trigger in line:
                 mag_lst.append(np.array(istep_energies))
-                istep_energies = list()
+                istep_energies = []
             if "Atomic Wigner-Seitz radii" in line:
                 local_spin_trigger = True
 
@@ -574,18 +572,17 @@ class Outcar(object):
                                 float(spin_str_lst[2]),
                             ]
                         else:
-                            warnings.warn("Unrecognized spin configuration.")
+                            warnings.warn("Unrecognized spin configuration.", stacklevel=2)
                             return mag_lst, final_magmom_lst
                         istep_energies.append(ene)
                 except ValueError:
-                    warnings.warn("Something went wrong in parsing the magnetization")
-            if n_atoms is None:
-                if nion_trigger in line:
-                    n_atoms = int(line.split(nion_trigger)[-1])
+                    warnings.warn("Something went wrong in parsing the magnetization", stacklevel=2)
+            if n_atoms is None and nion_trigger in line:
+                n_atoms = int(line.split(nion_trigger)[-1])
             if local_spin_trigger:
                 try:
-                    for ind_dir, direc in enumerate(["x", "y", "z"]):
-                        if "magnetization ({})".format(direc) in line:
+                    for _ind_dir, direc in enumerate(["x", "y", "z"]):
+                        if f"magnetization ({direc})" in line:
                             mag_dict[direc].append(
                                 [
                                     float(lines[i + 4 + atom_index].split()[-1])
@@ -594,7 +591,7 @@ class Outcar(object):
                             )
                 except ValueError:
                     warnings.warn(
-                        "Something went wrong in parsing the magnetic moments"
+                        "Something went wrong in parsing the magnetic moments", stacklevel=2
                     )
         if len(mag_dict["x"]) > 0:
             if len(mag_dict["y"]) == 0:
@@ -627,7 +624,7 @@ class Outcar(object):
             line_ngx = lines[trigger_indices[0] - 2]
         else:
             warnings.warn(
-                "Unable to parse the Broyden mixing mesh. Returning 0 instead"
+                "Unable to parse the Broyden mixing mesh. Returning 0 instead", stacklevel=2
             )
             return 0
         # Exclude all alphabets, and spaces. Then split based on '='
@@ -660,7 +657,7 @@ class Outcar(object):
                 try:
                     temperatures.append(float(output_string))
                 except ValueError:
-                    warnings.warn(f"Temperature too high. Vasp output: {line}")
+                    warnings.warn(f"Temperature too high. Vasp output: {line}", stacklevel=2)
                     temperatures.append(np.nan)
         else:
             temperatures = np.zeros(
@@ -714,7 +711,7 @@ class Outcar(object):
         potim_trigger = "POTIM  ="
         potim = 1.0
         lines = _get_lines_from_file(filename=filename, lines=lines)
-        for i, line in enumerate(lines):
+        for _i, line in enumerate(lines):
             if potim_trigger in line:
                 line = line.strip()
                 line = _clean_line(line)
@@ -735,12 +732,12 @@ class Outcar(object):
             float: The kinetic energy error in eV
         """
         trigger = "kinetic energy error for atom="
-        e_kin_err = list()
-        n_species_list = list()
+        e_kin_err = []
+        n_species_list = []
         nion_trigger = "ions per type ="
         tot_kin_error = 0.0
         lines = _get_lines_from_file(filename=filename, lines=lines)
-        for i, line in enumerate(lines):
+        for _i, line in enumerate(lines):
             line = line.strip()
             if trigger in line:
                 e_kin_err.append(float(line.split()[5]))
@@ -791,14 +788,14 @@ class Outcar(object):
         """
         moment_trigger = "dipolmoment"
         istep_trigger = "FREE ENERGIE OF THE ION-ELECTRON SYSTEM (eV)"
-        dip_moms = list()
+        dip_moms = []
         lines = _get_lines_from_file(filename=filename, lines=lines)
-        istep_mom = list()
-        for i, line in enumerate(lines):
+        istep_mom = []
+        for _i, line in enumerate(lines):
             line = line.strip()
             if istep_trigger in line:
                 dip_moms.append(np.array(istep_mom))
-                istep_mom = list()
+                istep_mom = []
             if moment_trigger in line:
                 line = _clean_line(line)
                 mom = np.array([float(val) for val in line.split()[1:4]])
@@ -820,7 +817,7 @@ class Outcar(object):
         """
         nelect_trigger = "NELECT"
         lines = _get_lines_from_file(filename=filename, lines=lines)
-        for i, line in enumerate(lines):
+        for _i, line in enumerate(lines):
             line = line.strip()
             if nelect_trigger in line:
                 return float(line.split()[2])
@@ -840,7 +837,7 @@ class Outcar(object):
         """
         nelect_trigger = "Total CPU time used (sec):"
         lines = _get_lines_from_file(filename=filename, lines=lines)
-        for i, line in enumerate(lines):
+        for _i, line in enumerate(lines):
             line = line.strip()
             if nelect_trigger in line:
                 return float(line.split()[-1])
@@ -860,7 +857,7 @@ class Outcar(object):
         """
         nelect_trigger = "User time (sec):"
         lines = _get_lines_from_file(filename=filename, lines=lines)
-        for i, line in enumerate(lines):
+        for _i, line in enumerate(lines):
             line = line.strip()
             if nelect_trigger in line:
                 return float(line.split()[-1])
@@ -880,7 +877,7 @@ class Outcar(object):
         """
         nelect_trigger = "System time (sec):"
         lines = _get_lines_from_file(filename=filename, lines=lines)
-        for i, line in enumerate(lines):
+        for _i, line in enumerate(lines):
             line = line.strip()
             if nelect_trigger in line:
                 return float(line.split()[-1])
@@ -900,7 +897,7 @@ class Outcar(object):
         """
         nelect_trigger = "Elapsed time (sec):"
         lines = _get_lines_from_file(filename=filename, lines=lines)
-        for i, line in enumerate(lines):
+        for _i, line in enumerate(lines):
             line = line.strip()
             if nelect_trigger in line:
                 return float(line.split()[-1])
@@ -920,7 +917,7 @@ class Outcar(object):
         """
         nelect_trigger = "Maximum memory used (kb):"
         lines = _get_lines_from_file(filename=filename, lines=lines)
-        for i, line in enumerate(lines):
+        for _i, line in enumerate(lines):
             line = line.strip()
             if nelect_trigger in line:
                 return float(line.split()[-1])
@@ -955,7 +952,7 @@ class Outcar(object):
         fermi_trigger_indices, lines = _get_trigger(
             lines=lines, filename=filename, trigger=fermi_trigger
         )
-        fermi_level_list = list()
+        fermi_level_list = []
         vbm_level_dict = OrderedDict()
         cbm_level_dict = OrderedDict()
         for ind in fermi_trigger_indices:
@@ -973,7 +970,7 @@ class Outcar(object):
                     filename=filename,
                     trigger=band_trigger,
                 )
-            band_data = list()
+            band_data = []
             for ind in trigger_indices:
                 if "spin component" in lines_new[ind - 3]:
                     is_spin_polarized = True
@@ -998,14 +995,14 @@ class Outcar(object):
             else:
                 band_data_per_spin = [band_data]
             for spin, band_data in enumerate(band_data_per_spin):
-                if spin in cbm_level_dict.keys():
+                if spin in cbm_level_dict:
                     pass
                 else:
-                    cbm_level_dict[spin] = list()
-                if spin in vbm_level_dict.keys():
+                    cbm_level_dict[spin] = []
+                if spin in vbm_level_dict:
                     pass
                 else:
-                    vbm_level_dict[spin] = list()
+                    vbm_level_dict[spin] = []
                 if len(band_data) > 0:
                     band_energy, band_occ = [
                         np.array(band_data)[:, i] for i in range(2)
@@ -1027,8 +1024,8 @@ class Outcar(object):
                         vbm_level_dict[spin].append(band_energy[~cbm_bool][-1])
         return (
             np.array(fermi_level_list),
-            np.array([val for val in vbm_level_dict.values()]),
-            np.array([val for val in cbm_level_dict.values()]),
+            np.array(list(vbm_level_dict.values())),
+            np.array(list(cbm_level_dict.values())),
         )
 
     @staticmethod
@@ -1121,7 +1118,7 @@ class Outcar(object):
                 cells.append(cell)
             return np.array(cells)
         except ValueError:
-            warnings.warn("Unable to parse the cells from the OUTCAR file")
+            warnings.warn("Unable to parse the cells from the OUTCAR file", stacklevel=2)
             return
 
     @staticmethod
@@ -1246,6 +1243,6 @@ def _get_lines_from_file(filename, lines=None):
         list: list of lines
     """
     if lines is None:
-        with open(filename, "r", errors="ignore") as f:
+        with open(filename, errors="ignore") as f:
             lines = f.readlines()
     return lines

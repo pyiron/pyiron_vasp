@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright (c) Max-Planck-Institut für Eisenforschung GmbH - Computational Materials Design (CM) Department
 # Distributed under the terms of "New BSD License", see the LICENSE file.
 
@@ -19,7 +18,7 @@ __status__ = "development"
 __date__ = "Sep 1, 2017"
 
 
-class VolumetricData(object):
+class VolumetricData:
     """
     A new class to handle 3-dimensional volumetric data elegantly (charge densities, electrostatic potentials etc) based
     on the numpy.ndarray instance. This module is adapted from the pymatgen vasp VolumtricData class
@@ -63,7 +62,7 @@ class VolumetricData(object):
         if not (isinstance(val, (np.ndarray, list))):
             raise TypeError(
                 "Attribute total_data should be a numpy.ndarray instance or a list and "
-                "not {}".format(type(val))
+                f"not {type(val)}"
             )
         val = np.array(val)
         shape = np.array(np.shape(val))
@@ -358,7 +357,7 @@ class VolumetricData(object):
             filename (str): Filename to parse
 
         """
-        with open(filename, "r", errors="ignore") as f:
+        with open(filename, errors="ignore") as f:
             lines = f.readlines()
             n_atoms = int(lines[2].strip().split()[0])
             cell_data = np.genfromtxt(lines[3:6])

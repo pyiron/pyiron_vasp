@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright (c) Max-Planck-Institut für Eisenforschung GmbH - Computational Materials Design (CM) Department
 # Distributed under the terms of "New BSD License", see the LICENSE file.
 
@@ -107,7 +106,7 @@ def call_bader(foldername, extra_arguments=None):
     """
     if extra_arguments is None:
         extra_arguments = ""
-    cmd = "bader valence_charge.CUBE -ref total_charge.CUBE {0}".format(extra_arguments)
+    cmd = f"bader valence_charge.CUBE -ref total_charge.CUBE {extra_arguments}"
     return subprocess.call(cmd, shell=True, cwd=foldername)
 
 
