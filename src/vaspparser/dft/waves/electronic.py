@@ -1,11 +1,8 @@
-# coding: utf-8
 # Copyright (c) Max-Planck-Institut für Eisenforschung GmbH - Computational Materials Design (CM) Department
 # Distributed under the terms of "New BSD License", see the LICENSE file.
 
-from __future__ import print_function
 
 import numpy as np
-from ase.atoms import Atoms
 
 from vaspparser.dft.waves.dos import Dos
 
@@ -21,7 +18,7 @@ __status__ = "development"
 __date__ = "Sep 1, 2017"
 
 
-class ElectronicStructure(object):
+class ElectronicStructure:
     """
     This is a generic module to store electronic structure data in a clean way. Kpoint and Band classes are used to
     store information related to kpoints and bands respectively. Every spin configuration has a set of k-points and
@@ -32,12 +29,12 @@ class ElectronicStructure(object):
     """
 
     def __init__(self):
-        self.kpoints = list()
-        self._eigenvalues = list()
-        self._occupancies = list()
-        self._dos_energies = list()
-        self._dos_densities = list()
-        self._dos_idensities = list()
+        self.kpoints = []
+        self._eigenvalues = []
+        self._occupancies = []
+        self._dos_energies = []
+        self._dos_densities = []
+        self._dos_idensities = []
         self._eg = None
         self._vbm = None
         self._cbm = None
@@ -46,8 +43,8 @@ class ElectronicStructure(object):
         self._occupancy_matrix = None
         self._grand_dos_matrix = None
         self._resolved_densities = None
-        self._kpoint_list = list()
-        self._kpoint_weights = list()
+        self._kpoint_list = []
+        self._kpoint_weights = []
         self.n_spins = 1
         self._structure = None
         self._orbital_dict = None
@@ -209,7 +206,7 @@ class ElectronicStructure(object):
         list: The list of kpoints in cartesian coordinates
         """
         if len(self._kpoint_list) == 0:
-            kpt_lst = list()
+            kpt_lst = []
             for k in self.kpoints:
                 kpt_lst.append(k.value)
             self._kpoint_list = kpt_lst
@@ -225,7 +222,7 @@ class ElectronicStructure(object):
         list: The weights of the kpoints of the electronic structure in cartesian coordinates
         """
         if len(self._kpoint_weights) == 0:
-            kpt_lst = list()
+            kpt_lst = []
             for k in self.kpoints:
                 kpt_lst.append(k.weight)
             self._kpoint_weights = kpt_lst
@@ -259,26 +256,20 @@ class ElectronicStructure(object):
                 "kpoint": The Kpoint instance associated with the VBM
                 "band": The Band instance associated with the VBM
         """
-        vbm_spin_dict = dict()
+        vbm_spin_dict = {}
         n_spins = len(self._eigenvalue_matrix)
         for spin in range(n_spins):
             vbm = None
-            vbm_spin_dict[spin] = dict()
-            vbm_dict = dict()
+            vbm_spin_dict[spin] = {}
+            vbm_dict = {}
             for kpt in self.kpoints:
                 for band in kpt.bands[spin]:
                     if band.occupancy > resolution:
-                        if vbm is None:
+                        if vbm is None or band.eigenvalue > vbm:
                             vbm = band.eigenvalue
                             vbm_dict["value"] = vbm
                             vbm_dict["kpoint"] = kpt
                             vbm_dict["band"] = band
-                        else:
-                            if band.eigenvalue > vbm:
-                                vbm = band.eigenvalue
-                                vbm_dict["value"] = vbm
-                                vbm_dict["kpoint"] = kpt
-                                vbm_dict["band"] = band
                 vbm_spin_dict[spin] = vbm_dict
         return vbm_spin_dict
 
@@ -295,26 +286,20 @@ class ElectronicStructure(object):
                  "kpoint": The Kpoint instance associated with the CBM
                  "band": The Band instance associated with the CBM
         """
-        cbm_spin_dict = dict()
+        cbm_spin_dict = {}
         n_spins = len(self._eigenvalue_matrix)
         for spin in range(n_spins):
             cbm = None
-            cbm_spin_dict[spin] = dict()
-            cbm_dict = dict()
+            cbm_spin_dict[spin] = {}
+            cbm_dict = {}
             for kpt in self.kpoints:
                 for band in kpt.bands[spin]:
                     if band.occupancy <= resolution:
-                        if cbm is None:
+                        if cbm is None or band.eigenvalue < cbm:
                             cbm = band.eigenvalue
                             cbm_dict["value"] = cbm
                             cbm_dict["kpoint"] = kpt
                             cbm_dict["band"] = band
-                        else:
-                            if band.eigenvalue < cbm:
-                                cbm = band.eigenvalue
-                                cbm_dict["value"] = cbm
-                                cbm_dict["kpoint"] = kpt
-                                cbm_dict["band"] = band
                 cbm_spin_dict[spin] = cbm_dict
         return cbm_spin_dict
 
@@ -335,7 +320,7 @@ class ElectronicStructure(object):
         vbm_spin_dict = self.get_vbm(resolution)
         cbm_spin_dict = self.get_cbm(resolution)
         for spin, vbm_dict in vbm_spin_dict.items():
-            gap_dict[spin] = dict()
+            gap_dict[spin] = {}
             vbm = vbm_dict["value"]
             cbm = cbm_spin_dict[spin]["value"]
             gap_dict[spin]["band_gap"] = max(0.0, cbm - vbm)
@@ -581,7 +566,7 @@ class ElectronicStructure(object):
                 eigenvalues[arg],
                 self.occupancies[spin][arg],
                 "-o",
-                label="spin:{}".format(spin),
+                label=f"spin:{spin}",
                 linewidth=2,
             )
         plt.legend()
@@ -606,27 +591,21 @@ class ElectronicStructure(object):
         del self.n_spins
 
     def __str__(self):
-        output_string = list()
+        output_string = []
         output_string.append("ElectronicStructure Instance")
         output_string.append("----------------------------")
-        output_string.append(
-            "Number of spin channels: {}".format(len(self.eigenvalue_matrix))
-        )
-        output_string.append("Number of k-points: {}".format(len(self.kpoints)))
-        output_string.append(
-            "Number of bands: {}".format(len(self.kpoints[0].bands[0]))
-        )
+        output_string.append(f"Number of spin channels: {len(self.eigenvalue_matrix)}")
+        output_string.append(f"Number of k-points: {len(self.kpoints)}")
+        output_string.append(f"Number of bands: {len(self.kpoints[0].bands[0])}")
         try:
             for spin, is_metal in enumerate(self.is_metal):
                 if is_metal:
-                    output_string.append(
-                        "spin {}:".format(spin) + " Is a metal: {}".format(is_metal)
-                    )
+                    output_string.append(f"spin {spin}:" + f" Is a metal: {is_metal}")
                 else:
                     output_string.append(
-                        "spin {}:".format(spin)
-                        + " Is a metal: {}".format(is_metal)
-                        + " Band gap (ev) {}".format(self.eg[spin])
+                        f"spin {spin}:"
+                        + f" Is a metal: {is_metal}"
+                        + f" Band gap (ev) {self.eg[spin]}"
                     )
         except ValueError:
             pass
@@ -636,7 +615,7 @@ class ElectronicStructure(object):
         return self.__str__()
 
 
-class Kpoint(object):
+class Kpoint:
     """
     All data related to a single k-point is stored in this module
 
@@ -653,7 +632,7 @@ class Kpoint(object):
     def __init__(self):
         self._value = None
         self._weight = None
-        self.bands = dict()
+        self.bands = {}
         self.is_relative = False
 
     @property
@@ -684,19 +663,19 @@ class Kpoint(object):
         band_obj = Band()
         band_obj.eigenvalue = eigenvalue
         band_obj.occupancy = occupancy
-        if spin not in self.bands.keys():
-            self.bands[spin] = list()
+        if spin not in self.bands:
+            self.bands[spin] = []
         self.bands[spin].append(band_obj)
 
     @property
     def eig_occ_matrix(self):
-        eig_occ_list = list()
+        eig_occ_list = []
         for bands in self.bands.values():
             eig_occ_list.append([[b.eigenvalue, b.occupancy] for b in bands])
         return np.array(eig_occ_list)
 
 
-class Band(object):
+class Band:
     """
     All data related to a single band for every k-point is stored in this module
     """

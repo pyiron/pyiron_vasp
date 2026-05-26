@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright (c) Max-Planck-Institut für Eisenforschung GmbH - Computational Materials Design (CM) Department
 # Distributed under the terms of "New BSD License", see the LICENSE file.
 
@@ -36,7 +35,7 @@ class VaspVolumetricData(VolumetricData):
     """
 
     def __init__(self):
-        super(VaspVolumetricData, self).__init__()
+        super().__init__()
         self.atoms = None
         self._diff_data = None
         self._total_data = None
@@ -59,7 +58,7 @@ class VaspVolumetricData(VolumetricData):
                     filename=filename, normalize=normalize
                 )
             except (ValueError, IndexError, TypeError):
-                raise ValueError("Unable to parse file: {}".format(filename))
+                raise ValueError(f"Unable to parse file: {filename}")
         if self.atoms is not None:
             self._total_data = vol_data_list[0]
             if len(vol_data_list) > 1:
@@ -80,12 +79,14 @@ class VaspVolumetricData(VolumetricData):
 
         """
         if os.stat(filename).st_size == 0:
-            warnings.warn("File:" + filename + "seems to be corrupted/empty")
+            warnings.warn(
+                "File:" + filename + "seems to be corrupted/empty", stacklevel=2
+            )
             return None, None
         poscar_read = False
-        poscar_string = list()
-        dataset = list()
-        all_dataset = list()
+        poscar_string = []
+        dataset = []
+        all_dataset = []
         dim = None
         dimline = None
         read_dataset = False
@@ -93,7 +94,7 @@ class VaspVolumetricData(VolumetricData):
         data_count = 0
         atoms = None
         volume = None
-        with open(filename, "r") as f:
+        with open(filename) as f:
             for line in f:
                 line = line.strip()
                 if read_dataset:
@@ -140,7 +141,9 @@ class VaspVolumetricData(VolumetricData):
             if not normalize:
                 volume = 1.0
             if len(all_dataset) == 0:
-                warnings.warn("File:" + filename + "seems to be corrupted/empty")
+                warnings.warn(
+                    "File:" + filename + "seems to be corrupted/empty", stacklevel=2
+                )
                 return None, None
             if len(all_dataset) == 2:
                 data = {
@@ -167,17 +170,17 @@ class VaspVolumetricData(VolumetricData):
 
         """
         if not os.path.getsize(filename) > 0:
-            warnings.warn("File:" + filename + "seems to be empty! ")
+            warnings.warn("File:" + filename + "seems to be empty! ", stacklevel=2)
             return None, None
-        with open(filename, "r") as f:
-            struct_lines = list()
+        with open(filename) as f:
+            struct_lines = []
             get_grid = False
             n_x = 0
             n_y = 0
             n_z = 0
             n_grid = 0
             n_grid_str = None
-            total_data_list = list()
+            total_data_list = []
             atoms = None
             for line in f:
                 strip_line = line.strip()
@@ -226,7 +229,8 @@ class VaspVolumetricData(VolumetricData):
                 warnings.warn(
                     "File:"
                     + filename
-                    + "seems to be corrupted/empty even after parsing!"
+                    + "seems to be corrupted/empty even after parsing!",
+                    stacklevel=2,
                 )
                 return None, None
             return atoms, total_data_list

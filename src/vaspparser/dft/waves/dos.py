@@ -1,8 +1,6 @@
-# coding: utf-8
 # Copyright (c) Max-Planck-Institut für Eisenforschung GmbH - Computational Materials Design (CM) Department
 # Distributed under the terms of "New BSD License", see the LICENSE file.
 
-from __future__ import print_function
 
 import numpy as np
 
@@ -18,7 +16,7 @@ __status__ = "development"
 __date__ = "Sep 1, 2017"
 
 
-class Dos(object):
+class Dos:
     """
     The DOS class stores all information to store and retrieve the total and resolved density of states from an
     electronic structure calculation.
@@ -34,13 +32,10 @@ class Dos(object):
         self.orbital_dict = {"s": [0], "p": [1, 2, 3], "d": [4, 5, 6, 7, 8]}
         self.n_bins = n_bins
         self.es_obj = es_obj
-        self.t_dos = list()
-        self.energies = list()
+        self.t_dos = []
+        self.energies = []
 
-        if es_obj is not None:
-            eig_vals = self.es_obj.eigenvalues
-        else:
-            eig_vals = eigenvalues
+        eig_vals = self.es_obj.eigenvalues if es_obj is not None else eigenvalues
         for eig_val in eig_vals:
             dos_min = np.min(eig_val)
             dos_max = np.max(eig_val)
@@ -75,9 +70,7 @@ class Dos(object):
         ax1.set_xlabel("E (eV)", fontsize=14)
         ax1.set_ylabel("DOS", fontsize=14)
         for i, energies in enumerate(self.energies):
-            plt.fill_between(
-                energies, self.t_dos[i], label="spin {}".format(i), **kwargs
-            )
+            plt.fill_between(energies, self.t_dos[i], label=f"spin {i}", **kwargs)
         plt.legend()
         return plt
 
@@ -104,9 +97,7 @@ class Dos(object):
         for spin in range(len(self.energies)):
             for key, val in self.orbital_dict.items():
                 r_dos = self.get_orbital_resolved_dos(val)
-                plt.plot(
-                    self.energies, r_dos, label=key + "spin {}".format(spin), **kwargs
-                )
+                plt.plot(self.energies, r_dos, label=key + f"spin {spin}", **kwargs)
         plot.legend()
         return plot
 

@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright (c) Max-Planck-Institut für Eisenforschung GmbH - Computational Materials Design (CM) Department
 # Distributed under the terms of "New BSD License", see the LICENSE file.
 
@@ -20,7 +19,7 @@ __status__ = "production"
 __date__ = "Sep 1, 2017"
 
 
-class Procar(object):
+class Procar:
     """
     This module contains routines to parse VASP PROCAR files.
     """
@@ -30,7 +29,7 @@ class Procar(object):
         self.dos_dict = OrderedDict()
 
     def from_file(self, filename):
-        with open(filename, "r", errors="ignore") as f:
+        with open(filename, errors="ignore") as f:
             es_obj = ElectronicStructure()
             lines = f.readlines()
             details_trigger = "# of k-points:"
@@ -94,8 +93,8 @@ class Procar(object):
         num_orbitals = len((lines[0].strip()).split()) - 2
         num_atoms = len(lines) - 2
         dos_matrix = np.zeros((num_atoms, num_orbitals))
-        orbital_resolved_dos = list()
-        atom_resolved_dos = list()
+        orbital_resolved_dos = []
+        atom_resolved_dos = []
         count = 0
         for i, line in enumerate(lines):
             line = line.strip()

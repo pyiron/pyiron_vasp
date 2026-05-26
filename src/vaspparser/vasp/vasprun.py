@@ -1,7 +1,7 @@
-# coding: utf-8
 # Copyright (c) Max-Planck-Institut für Eisenforschung GmbH - Computational Materials Design (CM) Department
 # Distributed under the terms of "New BSD License", see the LICENSE file.
 
+import contextlib
 import os
 import re
 import warnings
@@ -27,7 +27,7 @@ __status__ = "production"
 __date__ = "Sep 1, 2017"
 
 
-class Vasprun(object):
+class Vasprun:
     """
     This module is used to parse vasprun.xml files and store the data consistent with the pyiron input/output storage
     formats.
@@ -44,7 +44,7 @@ class Vasprun(object):
     """
 
     def __init__(self):
-        self.vasprun_dict = dict()
+        self.vasprun_dict = {}
 
     def from_file(self, filename="vasprun.xml"):
         """
@@ -67,35 +67,35 @@ class Vasprun(object):
         Parses from the main xml root.
         """
         d = self.vasprun_dict
-        d["scf_energies"] = list()
-        d["scf_fr_energies"] = list()
-        d["scf_0_energies"] = list()
-        d["scf_dipole_moments"] = list()
-        d["positions"] = list()
-        d["cells"] = list()
-        d["forces"] = list()
-        d["total_energies"] = list()
-        d["total_fr_energies"] = list()
-        d["total_0_energies"] = list()
-        d["kinetic_energies"] = list()
-        d["stress_tensors"] = list()
+        d["scf_energies"] = []
+        d["scf_fr_energies"] = []
+        d["scf_0_energies"] = []
+        d["scf_dipole_moments"] = []
+        d["positions"] = []
+        d["cells"] = []
+        d["forces"] = []
+        d["total_energies"] = []
+        d["total_fr_energies"] = []
+        d["total_0_energies"] = []
+        d["kinetic_energies"] = []
+        d["stress_tensors"] = []
         for _, leaf in ETree.iterparse(filename):
             if leaf.tag in ["generator", "incar"]:
-                d[leaf.tag] = dict()
+                d[leaf.tag] = {}
                 for items in leaf:
                     d[leaf.tag] = self.parse_item_to_dict(items, d[leaf.tag])
             if leaf.tag in ["kpoints"]:
-                d[leaf.tag] = dict()
+                d[leaf.tag] = {}
                 self.parse_kpoints_to_dict(leaf, d[leaf.tag])
             if leaf.tag in ["atominfo"]:
-                d[leaf.tag] = dict()
+                d[leaf.tag] = {}
                 self.parse_atom_information_to_dict(leaf, d[leaf.tag])
-            if leaf.tag in ["structure"] and "name" in leaf.keys():
+            if leaf.tag in ["structure"] and "name" in leaf.attrib:
                 if "initialpos" in leaf.attrib["name"]:
-                    d["init_structure"] = dict()
+                    d["init_structure"] = {}
                     self.parse_structure_to_dict(leaf, d["init_structure"])
                 elif "finalpos" in leaf.attrib["name"]:
-                    d["final_structure"] = dict()
+                    d["final_structure"] = {}
                     self.parse_structure_to_dict(leaf, d["final_structure"])
             if leaf.tag in ["calculation"]:
                 self.parse_calc_to_dict(leaf, d)
@@ -136,10 +136,10 @@ class Vasprun(object):
             raise AssertionError()
         for leaf in node:
             if leaf.tag == "generation":
-                d[leaf.tag] = dict()
+                d[leaf.tag] = {}
                 d[leaf.tag]["scheme"] = leaf.attrib["param"]
                 if d[leaf.tag]["scheme"] == "listgenerated":
-                    line_mode_kpoints = list()
+                    line_mode_kpoints = []
                     for item in leaf:
                         if item.tag == "v":
                             line_mode_kpoints.append(
@@ -155,7 +155,7 @@ class Vasprun(object):
                                     item, vec_type=int
                                 )
                             if item.attrib["name"] in [
-                                "genvec{}".format(i) for i in range(1, 4)
+                                f"genvec{i}" for i in range(1, 4)
                             ]:
                                 if item.attrib["name"] == "genvec1":
                                     gen_vec[0, :] = self._parse_vector(
@@ -198,45 +198,44 @@ class Vasprun(object):
                 d["n_atoms"] = self._parse_vector(leaf)[0]
             if leaf.tag == "types":
                 d["n_species"] = self._parse_vector(leaf)[0]
-            if leaf.tag == "array":
-                if leaf.attrib["name"] == "atomtypes":
-                    for item in leaf:
-                        if item.tag == "set":
-                            for sp in item:
-                                elements = sp
-                                if elements[1].text in species_dict.keys():
-                                    count = 1
-                                    not_unique = True
-                                    species_key = None
-                                    while not_unique:
-                                        species_key = "_".join(
-                                            [elements[1].text, str(count)]
-                                        )
-                                        if species_key not in species_dict.keys():
-                                            not_unique = False
-                                        else:
-                                            count += 1
-                                    if species_key is not None:
-                                        species_dict[species_key] = dict()
-                                        species_dict[species_key]["n_atoms"] = int(
-                                            elements[0].text
-                                        )
-                                        species_dict[species_key]["valence"] = float(
-                                            elements[3].text
-                                        )
-                                else:
-                                    species_key = elements[1].text
-                                    species_dict[species_key] = dict()
+            if leaf.tag == "array" and leaf.attrib["name"] == "atomtypes":
+                for item in leaf:
+                    if item.tag == "set":
+                        for sp in item:
+                            elements = sp
+                            if elements[1].text in species_dict:
+                                count = 1
+                                not_unique = True
+                                species_key = None
+                                while not_unique:
+                                    species_key = "_".join(
+                                        [elements[1].text, str(count)]
+                                    )
+                                    if species_key not in species_dict:
+                                        not_unique = False
+                                    else:
+                                        count += 1
+                                if species_key is not None:
+                                    species_dict[species_key] = {}
                                     species_dict[species_key]["n_atoms"] = int(
                                         elements[0].text
                                     )
                                     species_dict[species_key]["valence"] = float(
                                         elements[3].text
                                     )
+                            else:
+                                species_key = elements[1].text
+                                species_dict[species_key] = {}
+                                species_dict[species_key]["n_atoms"] = int(
+                                    elements[0].text
+                                )
+                                species_dict[species_key]["valence"] = float(
+                                    elements[3].text
+                                )
         d["species_dict"] = species_dict
-        species_list = list()
+        species_list = []
         for key, val in species_dict.items():
-            for sp in np.tile([key], species_dict[key]["n_atoms"]):
+            for sp in np.tile([key], val["n_atoms"]):
                 species_list.append(clean_character(sp))
         d["species_list"] = species_list
 
@@ -268,9 +267,9 @@ class Vasprun(object):
             if item.tag == "array":
                 for ii in item:
                     if ii.tag == "set":
-                        spin_dos_energies = list()
-                        spin_dos_density = list()
-                        spin_dos_idensity = list()
+                        spin_dos_energies = []
+                        spin_dos_density = []
+                        spin_dos_idensity = []
                         for sp in ii:
                             if sp.tag == "set" and "spin" in sp.attrib["comment"]:
                                 try:
@@ -297,7 +296,7 @@ class Vasprun(object):
         """
         if not (node.tag == "partial"):
             raise AssertionError()
-        orbital_dict = dict()
+        orbital_dict = {}
         orbital_index = 0
         for item in node:
             if item.tag == "array":
@@ -307,9 +306,9 @@ class Vasprun(object):
                             orbital_dict[ii.text.replace(" ", "")] = orbital_index
                         orbital_index += 1
                     if ii.tag == "set":
-                        atom_resolved_dos = list()
+                        atom_resolved_dos = []
                         for ion in ii:
-                            spin_resolved_dos = list()
+                            spin_resolved_dos = []
                             if ion.tag == "set" and "ion" in ion.attrib["comment"]:
                                 for sp in ion:
                                     if (
@@ -346,7 +345,7 @@ class Vasprun(object):
         """
         if not (node.tag == "projected"):
             raise AssertionError()
-        orbital_dict = dict()
+        orbital_dict = {}
         orbital_index = 0
         for item in node:
             if item.tag == "array":
@@ -355,12 +354,12 @@ class Vasprun(object):
                         orbital_dict[ii.text] = orbital_index
                         orbital_index += 1
                     if ii.tag == "set":
-                        spin_dos_mat = list()
+                        spin_dos_mat = []
                         for sp in ii:
                             if sp.tag == "set" and "spin" in sp.attrib["comment"]:
-                                kpt_dos_mat = list()
+                                kpt_dos_mat = []
                                 for kpt in sp:
-                                    band_dos_mat = list()
+                                    band_dos_mat = []
                                     for band in kpt:
                                         dos_matrix = self._parse_2d_matrix(
                                             band, vec_type=float
@@ -382,7 +381,7 @@ class Vasprun(object):
         Returns:
             d (dict): Dictionary to containing parsed data
         """
-        d = dict()
+        d = {}
         if not (node.tag == "scstep"):
             raise AssertionError()
         for item in node:
@@ -408,20 +407,20 @@ class Vasprun(object):
             node (xml.etree.Element instance): The node to parse
             d (dict): The dictionary to which data is to be parsed
         """
-        scf_energies = list()
-        scf_fr_energies = list()
-        scf_0_energies = list()
-        scf_moments = list()
+        scf_energies = []
+        scf_fr_energies = []
+        scf_0_energies = []
+        scf_moments = []
         for item in node:
             if item.tag in ["scstep"]:
                 scf_dict = self.parse_scf(item)
                 scf_energies.append(scf_dict["scf_energy"])
                 scf_fr_energies.append(scf_dict["scf_fr_energy"])
                 scf_0_energies.append(scf_dict["scf_0_energy"])
-                if "scf_dipole_moment" in scf_dict.keys():
+                if "scf_dipole_moment" in scf_dict:
                     scf_moments.append(scf_dict["scf_dipole_moment"])
             if item.tag in ["structure"]:
-                struct_dict = dict()
+                struct_dict = {}
                 self.parse_structure_to_dict(item, struct_dict)
                 d["positions"].append(struct_dict["positions"])
                 d["cells"].append(struct_dict["cell"])
@@ -447,15 +446,11 @@ class Vasprun(object):
                 d["efermi"] = float(d["efermi"])
                 for i in item:
                     if i.tag == "total":
-                        try:
+                        with contextlib.suppress(ValueError):
                             self.parse_total_dos_to_dict(i, d)
-                        except ValueError:
-                            pass
                     if i.tag == "partial":
-                        try:
+                        with contextlib.suppress(ValueError):
                             self.parse_partial_dos_to_dict(i, d)
-                        except ValueError:
-                            pass
 
             if item.tag == "projected":
                 self.parse_projected_dos_to_dict(item, d)
@@ -472,7 +467,7 @@ class Vasprun(object):
     def parse_cce_to_dict(node, d):
         for item in node:
             if item.attrib["name"] not in list(d.keys()):
-                d[item.attrib["name"]] = list()
+                d[item.attrib["name"]] = []
             d[item.attrib["name"]].append(float(item.text))
 
     def parse_eigenvalues_to_dict(self, node, d):
@@ -485,18 +480,18 @@ class Vasprun(object):
         """
         if not (node.tag == "eigenvalues"):
             raise AssertionError()
-        grand_eigenvalue_matrix = list()
-        grand_occupancy_matrix = list()
+        grand_eigenvalue_matrix = []
+        grand_occupancy_matrix = []
         for item in node:
             if item.tag == "array":
                 for ii in item:
                     if ii.tag == "set":
-                        spin_occ_mat = list()
-                        spin_eig_mat = list()
+                        spin_occ_mat = []
+                        spin_eig_mat = []
                         for sp in ii:
                             if sp.tag == "set" and "spin" in sp.attrib["comment"]:
-                                kpt_eig_mat = list()
-                                kpt_occ_mat = list()
+                                kpt_eig_mat = []
+                                kpt_occ_mat = []
                                 for kpt in sp:
                                     values = self._parse_2d_matrix(kpt, vec_type=float)
                                     eig_vec = values[:, 0].flatten()
@@ -584,17 +579,15 @@ class Vasprun(object):
                     dict_key = clean_key(key_name)
                 else:
                     dict_key = clean_key(node.attrib["name"])
-                d[dict_key] = dict()
+                d[dict_key] = {}
                 for item in node:
                     try:
                         self.parse_item_to_dict(item, d[dict_key][item.attrib["name"]])
                     except (KeyError, ValueError, IndexError):
-                        try:
+                        with contextlib.suppress(KeyError, ValueError, IndexError):
                             self.parse_recursively(
                                 item, d[dict_key], item.attrib["name"]
                             )
-                        except (KeyError, ValueError, IndexError):
-                            pass
             except KeyError:
                 pass
 
@@ -609,7 +602,7 @@ class Vasprun(object):
         Returns:
             numpy.ndarray: The required 2D array/vector
         """
-        arr = list()
+        arr = []
         for item in node:
             arr.append(self._parse_vector(item, vec_type=vec_type))
         return np.array(arr)
@@ -629,7 +622,7 @@ class Vasprun(object):
         txt = node.text
         lst = txt.split()
         logical_dict = {"T": True, "F": False}
-        if "type" in node.attrib.keys():
+        if "type" in node.attrib:
             if node.attrib["type"] == "logical":
                 return np.array([logical_dict[l.strip()] for l in lst])
             else:
@@ -656,7 +649,7 @@ class Vasprun(object):
             basis = Atoms(el_list, positions=positions, cell=cell, pbc=True)
         else:
             basis = Atoms(el_list, scaled_positions=positions, cell=cell, pbc=True)
-        if "selective_dynamics" in self.vasprun_dict["init_structure"].keys():
+        if "selective_dynamics" in self.vasprun_dict["init_structure"]:
             constraints_dict = {
                 label: []
                 for label in ["TTT", "TTF", "FTT", "TFT", "TFF", "FFT", "FTF", "FFF"]
@@ -760,15 +753,15 @@ class Vasprun(object):
         es_obj.eigenvalue_matrix = self.vasprun_dict["grand_eigenvalue_matrix"]
         es_obj.occupancy_matrix = self.vasprun_dict["grand_occupancy_matrix"]
         es_obj.n_spins = len(es_obj.occupancy_matrix)
-        if "grand_dos_matrix" in self.vasprun_dict.keys():
+        if "grand_dos_matrix" in self.vasprun_dict:
             es_obj.grand_dos_matrix = self.vasprun_dict["grand_dos_matrix"]
-        if "efermi" in self.vasprun_dict.keys():
+        if "efermi" in self.vasprun_dict:
             es_obj.efermi = self.vasprun_dict["efermi"]
-        if "spin_dos_energies" in self.vasprun_dict.keys():
+        if "spin_dos_energies" in self.vasprun_dict:
             es_obj.dos_energies = self.vasprun_dict["spin_dos_energies"][0]
             es_obj.dos_densities = self.vasprun_dict["spin_dos_density"]
             es_obj.dos_idensities = self.vasprun_dict["spin_dos_idensity"]
-        if "resolved_dos_matrix" in self.vasprun_dict.keys():
+        if "resolved_dos_matrix" in self.vasprun_dict:
             es_obj.resolved_densities = self.vasprun_dict["resolved_dos_matrix"]
             es_obj.orbital_dict = self.vasprun_dict["orbital_dict"]
         es_obj.generate_from_matrices()
@@ -782,8 +775,8 @@ class Vasprun(object):
             dict/None: Dictionary with potentiostat output
 
         """
-        potstat_dict = dict()
-        if "dftnw_pot" not in self.vasprun_dict.keys():
+        potstat_dict = {}
+        if "dftnw_pot" not in self.vasprun_dict:
             return
         try:
             vasprun_dict_keys = [
@@ -803,7 +796,7 @@ class Vasprun(object):
                 "fermi_level",
             ]
             for k, vk in zip(potstat_dict_keys, vasprun_dict_keys):
-                if vk in self.vasprun_dict.keys():
+                if vk in self.vasprun_dict:
                     potstat_dict[k] = np.array(self.vasprun_dict[vk])
             return potstat_dict
         except KeyError:
@@ -872,7 +865,7 @@ def get_float_with_exception(text, exception_value=0.0):
     try:
         return float(text)
     except ValueError:
-        warnings.warn(message=" ", category=VasprunWarning)
+        warnings.warn(stacklevel=2, message=" ", category=VasprunWarning)
         return exception_value
 
 
