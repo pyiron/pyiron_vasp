@@ -46,7 +46,7 @@ class Vasprun:
     def __init__(self):
         self.vasprun_dict = {}
 
-    def from_file(self, filename="vasprun.xml"):
+    def from_file(self, filename: str = "vasprun.xml"):
         """
         Parsing vasprun.xml from the working directory
 
@@ -62,7 +62,7 @@ class Vasprun:
                 "The vasprun.xml file is either corrupted or the simulation has failed"
             )
 
-    def parse_root_to_dict(self, filename):
+    def parse_root_to_dict(self, filename: str):
         """
         Parses from the main xml root.
         """
@@ -124,7 +124,7 @@ class Vasprun:
         d["scf_0_energies"] = d["scf_0_energies"]
         d["stress_tensors"] = d["stress_tensors"]
 
-    def parse_kpoints_to_dict(self, node, d):
+    def parse_kpoints_to_dict(self, node, d: dict):
         """
         Parses k-points data from a node to a dictionary
 

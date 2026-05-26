@@ -2,6 +2,7 @@
 # Distributed under the terms of "New BSD License", see the LICENSE file.
 
 from collections import OrderedDict
+from typing import Optional
 
 import numpy as np
 
@@ -28,7 +29,7 @@ class Procar:
         self._is_spin_polarized = False
         self.dos_dict = OrderedDict()
 
-    def from_file(self, filename):
+    def from_file(self, filename: str):
         with open(filename, errors="ignore") as f:
             es_obj = ElectronicStructure()
             lines = f.readlines()
@@ -62,8 +63,10 @@ class Procar:
         return es_obj
 
     @staticmethod
-    def _check_if_spin_polarized(line):
-        pass
+    def _check_if_spin_polarized(line: str) -> Optional[bool]:
+        if "spin component" in line.lower():
+            return True
+        return None
 
     @staticmethod
     def _get_details(line):
@@ -74,7 +77,7 @@ class Procar:
         return num_kpts, num_bands, num_atoms
 
     @staticmethod
-    def _get_kpoint_details(line):
+    def _get_kpoint_details(line: str):
         line = line.replace("-", " -")
         lst = line.split()
         kpt = [float(lst[i]) for i in range(4, 7)]
@@ -82,19 +85,19 @@ class Procar:
         return kpt, weight
 
     @staticmethod
-    def _get_band_details(line):
+    def _get_band_details(line: str):
         lst = line.split()
         eigval = float(lst[4])
         occ = float(lst[7])
         return eigval, occ
 
     @staticmethod
-    def _get_dos_matrix(lines):
+    def _get_dos_matrix(lines: list[str]):
         num_orbitals = len((lines[0].strip()).split()) - 2
         num_atoms = len(lines) - 2
         dos_matrix = np.zeros((num_atoms, num_orbitals))
-        orbital_resolved_dos = []
-        atom_resolved_dos = []
+        orbital_resolved_dos: list[float] = []
+        atom_resolved_dos: list[float] = []
         count = 0
         for i, line in enumerate(lines):
             line = line.strip()
@@ -109,6 +112,4 @@ class Procar:
             if i == len(lines) - 1:
                 orbital_resolved_dos = [float(val) for val in lst[1 : len(lst) - 1]]
 
-        atom_resolved_dos = np.array(atom_resolved_dos)
-        orbital_resolved_dos = np.array(orbital_resolved_dos)
-        return dos_matrix, orbital_resolved_dos, atom_resolved_dos
+        return dos_matrix, np.array(orbital_resolved_dos), np.array(atom_resolved_dos)

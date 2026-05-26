@@ -2,6 +2,7 @@ import contextlib
 import os
 import posixpath
 import warnings
+from typing import Callable, Optional, Sequence, Union
 
 import numpy as np
 from ase.atoms import Atoms
@@ -49,14 +50,17 @@ class Output:
         return self._structure
 
     @structure.setter
-    def structure(self, atoms):
+    def structure(self, atoms: Atoms):
         """
         Setter for the output structure
         """
         self._structure = atoms
 
     def collect(
-        self, directory=os.getcwd(), sorted_indices=None, es_class=ElectronicStructure
+        self,
+        directory: str = os.getcwd(),
+        sorted_indices: Optional[np.ndarray] = None,
+        es_class=ElectronicStructure,
     ):
         """
         Collects output from the working directory
@@ -416,9 +420,9 @@ class VaspCollectError(ValueError):
 
 def parse_vasp_output(
     working_directory: str,
-    structure: Atoms = None,
-    sorted_indices: list = None,
-    read_atoms_funct: callable = read_atoms,
+    structure: Optional[Atoms] = None,
+    sorted_indices: Optional[Union[Sequence[int], np.ndarray]] = None,
+    read_atoms_funct: Callable = read_atoms,
     es_class=ElectronicStructure,
     bader_class=Bader,
     output_parser_class=Output,
@@ -449,12 +453,14 @@ def parse_vasp_output(
                 read_atoms_funct=read_atoms_funct,
             )
     if sorted_indices is None:
-        sorted_indices = np.array(range(len(structure)))
+        sorted_indices_array = np.arange(len(structure))
+    else:
+        sorted_indices_array = np.asarray(sorted_indices)
     output_parser.structure = structure.copy()
     try:
         output_parser.collect(
             directory=working_directory,
-            sorted_indices=sorted_indices,
+            sorted_indices=sorted_indices_array,
             es_class=es_class,
         )
     except VaspCollectError:
@@ -465,7 +471,7 @@ def parse_vasp_output(
             working_directory=working_directory,
             filename="CONTCAR",
             structure=structure,
-            sorted_indices=sorted_indices,
+            sorted_indices=sorted_indices_array,
             read_atoms_funct=read_atoms_funct,
         )
 
@@ -480,8 +486,8 @@ def parse_vasp_output(
             warnings.warn("Invoking Bader charge analysis failed", stacklevel=2)
         else:
             charges, volumes = charges_orig.copy(), volumes_orig.copy()
-            charges[sorted_indices] = charges_orig
-            volumes[sorted_indices] = volumes_orig
+            charges[sorted_indices_array] = charges_orig
+            volumes[sorted_indices_array] = volumes_orig
             if "valence_charges" in output_parser.generic_output.dft_log_dict:
                 valence_charges = output_parser.generic_output.dft_log_dict[
                     "valence_charges"
@@ -495,12 +501,12 @@ def parse_vasp_output(
 
 
 def get_final_structure_from_file(
-    working_directory,
-    filename="CONTCAR",
-    structure=None,
-    sorted_indices=None,
-    read_atoms_funct=read_atoms,
-):
+    working_directory: str,
+    filename: str = "CONTCAR",
+    structure: Optional[Atoms] = None,
+    sorted_indices: Optional[Union[Sequence[int], np.ndarray]] = None,
+    read_atoms_funct: Callable = read_atoms,
+) -> Atoms:
     """
     Get the final structure of the simulation usually from the CONTCAR file
 
@@ -512,7 +518,11 @@ def get_final_structure_from_file(
     """
     filename = posixpath.join(working_directory, filename)
     if structure is not None and sorted_indices is None:
-        sorted_indices = vasp_sorter(structure)
+        sorted_indices_array = vasp_sorter(structure)
+    elif sorted_indices is not None:
+        sorted_indices_array = np.asarray(sorted_indices)
+    else:
+        sorted_indices_array = None
     if structure is None:
         try:
             output_structure = read_atoms_funct(filename=filename)
@@ -531,7 +541,7 @@ def get_final_structure_from_file(
                 species_list=species_list,
             )
             input_structure.cell = output_structure.cell.copy()
-            input_structure.positions[sorted_indices] = output_structure.positions
+            input_structure.positions[sorted_indices_array] = output_structure.positions
         except (OSError, IndexError, ValueError):
             raise OSError("Unable to read output structure")
     return input_structure

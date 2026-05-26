@@ -4,6 +4,7 @@
 import re
 import warnings
 from collections import OrderedDict
+from typing import Any, Optional
 
 import numpy as np
 import scipy.constants
@@ -43,7 +44,7 @@ class Outcar:
     def __init__(self):
         self.parse_dict = {}
 
-    def from_file(self, filename="OUTCAR"):
+    def from_file(self, filename: str = "OUTCAR"):
         """
         Parse and store relevant quantities from the OUTCAR file into parse_dict.
 
@@ -137,7 +138,7 @@ class Outcar:
         except IndexError:
             self.parse_dict["pressures"] = np.zeros(len(steps))
 
-    def to_dict_minimal(self):
+    def to_dict_minimal(self) -> dict:
         output_dict = {}
         unique_quantities = [
             "kin_energy_error",
@@ -154,10 +155,18 @@ class Outcar:
                 output_dict[key] = self.parse_dict[key]
         return output_dict
 
-    def get_vasp_version(self, filename="OUTCAR", lines=None):
+    def get_vasp_version(
+        self, filename: str = "OUTCAR", lines: Optional[list[str]] = None
+    ):
+        lines = _get_lines_from_file(filename=filename, lines=lines)
         return lines[0].lstrip().split(sep=" ")[0]
 
-    def get_positions_and_forces(self, filename="OUTCAR", lines=None, n_atoms=None):
+    def get_positions_and_forces(
+        self,
+        filename: str = "OUTCAR",
+        lines: Optional[list[str]] = None,
+        n_atoms: Optional[int] = None,
+    ):
         """
         Gets the forces and positions for every ionic step from the OUTCAR file
 
@@ -186,7 +195,12 @@ class Outcar:
             force_flag=True,
         )
 
-    def get_positions(self, filename="OUTCAR", lines=None, n_atoms=None):
+    def get_positions(
+        self,
+        filename: str = "OUTCAR",
+        lines: Optional[list[str]] = None,
+        n_atoms: Optional[int] = None,
+    ):
         """
         Gets the positions for every ionic step from the OUTCAR file
 
@@ -213,7 +227,12 @@ class Outcar:
             force_flag=False,
         )
 
-    def get_forces(self, filename="OUTCAR", lines=None, n_atoms=None):
+    def get_forces(
+        self,
+        filename: str = "OUTCAR",
+        lines: Optional[list[str]] = None,
+        n_atoms: Optional[int] = None,
+    ):
         """
         Gets the forces for every ionic step from the OUTCAR file
 
@@ -241,7 +260,7 @@ class Outcar:
             force_flag=True,
         )
 
-    def get_cells(self, filename="OUTCAR", lines=None):
+    def get_cells(self, filename: str = "OUTCAR", lines: Optional[list[str]] = None):
         """
         Gets the cell size and shape for every ionic step from the OUTCAR file
 
@@ -260,7 +279,11 @@ class Outcar:
         return self._get_cells_praser(lines=lines, trigger_indices=trigger_indices)
 
     @staticmethod
-    def get_stresses(filename="OUTCAR", lines=None, si_unit=True):
+    def get_stresses(
+        filename: str = "OUTCAR",
+        lines: Optional[list[str]] = None,
+        si_unit: bool = True,
+    ):
         """
 
         Args:
@@ -307,7 +330,11 @@ class Outcar:
 
     @staticmethod
     def get_irreducible_kpoints(
-        filename="OUTCAR", reciprocal=True, weight=True, planewaves=True, lines=None
+        filename: str = "OUTCAR",
+        reciprocal: bool = True,
+        weight: bool = True,
+        planewaves: bool = True,
+        lines: Optional[list[str]] = None,
     ):
         """
         Function to extract the irreducible kpoints from the OUTCAR file
@@ -386,7 +413,9 @@ class Outcar:
             return np.array(kpoint_lst)
 
     @staticmethod
-    def get_total_energies(filename="OUTCAR", lines=None):
+    def get_total_energies(
+        filename: str = "OUTCAR", lines: Optional[list[str]] = None
+    ) -> np.ndarray:
         """
         Gets the total energy for every ionic step from the OUTCAR file
 
@@ -413,7 +442,9 @@ class Outcar:
         )
 
     @staticmethod
-    def get_energy_without_entropy(filename="OUTCAR", lines=None):
+    def get_energy_without_entropy(
+        filename: str = "OUTCAR", lines: Optional[list[str]] = None
+    ) -> np.ndarray:
         """
         Gets the total energy for every ionic step from the OUTCAR file
 
@@ -443,7 +474,9 @@ class Outcar:
         )
 
     @staticmethod
-    def get_energy_sigma_0(filename="OUTCAR", lines=None):
+    def get_energy_sigma_0(
+        filename: str = "OUTCAR", lines: Optional[list[str]] = None
+    ) -> np.ndarray:
         """
         Gets the total energy for every ionic step from the OUTCAR file
 
@@ -470,7 +503,9 @@ class Outcar:
         )
 
     @staticmethod
-    def get_ediel_sol(filename="OUTCAR", lines=None):
+    def get_ediel_sol(
+        filename: str = "OUTCAR", lines: Optional[list[str]] = None
+    ) -> np.ndarray:
         """
         Gets the ediel_sol for every ionic step from the OUTCAR file
 
@@ -495,7 +530,9 @@ class Outcar:
         return np.array([get_ediel_sol_from_line(lines[j]) for j in trigger_indices])
 
     @staticmethod
-    def get_all_total_energies(filename="OUTCAR", lines=None):
+    def get_all_total_energies(
+        filename: str = "OUTCAR", lines: Optional[list[str]] = None
+    ) -> list[np.ndarray]:
         """
         Gets the energy at every electronic step
 
@@ -529,7 +566,7 @@ class Outcar:
         ]
 
     @staticmethod
-    def get_magnetization(filename="OUTCAR", lines=None):
+    def get_magnetization(filename: str = "OUTCAR", lines: Optional[list[str]] = None):
         """
         Gets the magnetization
 
@@ -543,16 +580,16 @@ class Outcar:
         ionic_trigger = "FREE ENERGIE OF THE ION-ELECTRON SYSTEM (eV)"
         electronic_trigger = "eigenvalue-minimisations"
         nion_trigger = "NIONS ="
-        mag_lst = []
+        mag_lst: list[np.ndarray] = []
         local_spin_trigger = False
         n_atoms = None
-        mag_dict = {}
+        mag_dict: dict[str, list[list[float]]] = {}
         mag_dict["x"] = []
         mag_dict["y"] = []
         mag_dict["z"] = []
         lines = _get_lines_from_file(filename=filename, lines=lines)
-        istep_energies = []
-        final_magmom_lst = []
+        istep_energies: list[float | list[float]] = []
+        final_magmom_lst: list[Any] = []
         for i, line in enumerate(lines):
             line = line.strip()
             if ionic_trigger in line:
@@ -568,7 +605,7 @@ class Outcar:
                         spin_str_lst = line.split()
                         spin_str_len = len(spin_str_lst)
                         if spin_str_len == 1:
-                            ene = float(line)
+                            ene: float | list[float] = float(line)
                         elif spin_str_len == 3:
                             ene = [
                                 float(spin_str_lst[0]),
@@ -589,6 +626,8 @@ class Outcar:
             if n_atoms is None and nion_trigger in line:
                 n_atoms = int(line.split(nion_trigger)[-1])
             if local_spin_trigger:
+                if n_atoms is None:
+                    continue
                 try:
                     for _ind_dir, direc in enumerate(["x", "y", "z"]):
                         if f"magnetization ({direc})" in line:
@@ -607,6 +646,8 @@ class Outcar:
             if len(mag_dict["y"]) == 0:
                 final_mag = np.array(mag_dict["x"])
             else:
+                if n_atoms is None:
+                    return mag_lst, final_magmom_lst
                 n_ionic_steps = np.array(mag_dict["x"]).shape[0]
                 final_mag = np.abs(np.zeros((n_ionic_steps, n_atoms, 3)))
                 final_mag[:, :, 0] = np.array(mag_dict["x"])
@@ -616,7 +657,9 @@ class Outcar:
         return mag_lst, final_magmom_lst
 
     @staticmethod
-    def get_broyden_mixing_mesh(filename="OUTCAR", lines=None):
+    def get_broyden_mixing_mesh(
+        filename: str = "OUTCAR", lines: Optional[list[str]] = None
+    ):
         """
         Gets the Broyden mixing mesh size
 
@@ -645,7 +688,7 @@ class Outcar:
         return np.prod([int(val) for val in str_list[1:]])
 
     @staticmethod
-    def get_temperatures(filename="OUTCAR", lines=None):
+    def get_temperatures(filename: str = "OUTCAR", lines: Optional[list[str]] = None):
         """
         Gets the temperature at each ionic step (applicable for MD)
 
@@ -659,7 +702,7 @@ class Outcar:
         trigger_indices, lines = _get_trigger(
             lines=lines, filename=filename, trigger="kin. lattice  EKIN_LAT= "
         )
-        temperatures = []
+        temperatures: list[float] = []
         if len(trigger_indices) > 0:
             for j in trigger_indices:
                 line = lines[j].strip()
@@ -673,7 +716,7 @@ class Outcar:
                     )
                     temperatures.append(np.nan)
         else:
-            temperatures = np.zeros(
+            return np.zeros(
                 len(
                     _get_trigger(
                         lines=lines,
@@ -685,7 +728,7 @@ class Outcar:
         return np.array(temperatures)
 
     @staticmethod
-    def get_steps(filename="OUTCAR", lines=None):
+    def get_steps(filename: str = "OUTCAR", lines: Optional[list[str]] = None):
         """
 
         Args:
@@ -709,7 +752,7 @@ class Outcar:
             nblock = 1
         return np.arange(0, steps * nblock, nblock)
 
-    def get_time(self, filename="OUTCAR", lines=None):
+    def get_time(self, filename: str = "OUTCAR", lines: Optional[list[str]] = None):
         """
         Time after each simulation step (for MD)
 
@@ -733,7 +776,9 @@ class Outcar:
         return potim * self.get_steps(filename)
 
     @staticmethod
-    def get_kinetic_energy_error(filename="OUTCAR", lines=None):
+    def get_kinetic_energy_error(
+        filename: str = "OUTCAR", lines: Optional[list[str]] = None
+    ) -> float:
         """
         Get the kinetic energy error
 
@@ -763,7 +808,9 @@ class Outcar:
         return tot_kin_error
 
     @staticmethod
-    def get_fermi_level(filename="OUTCAR", lines=None):
+    def get_fermi_level(
+        filename: str = "OUTCAR", lines: Optional[list[str]] = None
+    ) -> Optional[float]:
         """
         Getting the Fermi-level (Kohn_Sham) from the OUTCAR file
 
@@ -782,12 +829,12 @@ class Outcar:
             try:
                 return float(lines[trigger_indices[-1]].split(trigger)[-1].split()[0])
             except ValueError:
-                return
+                return None
         else:
-            return
+            return None
 
     @staticmethod
-    def get_dipole_moments(filename="OUTCAR", lines=None):
+    def get_dipole_moments(filename: str = "OUTCAR", lines: Optional[list[str]] = None):
         """
         Get the electric dipole moment at every electronic step
 
@@ -803,7 +850,7 @@ class Outcar:
         istep_trigger = "FREE ENERGIE OF THE ION-ELECTRON SYSTEM (eV)"
         dip_moms = []
         lines = _get_lines_from_file(filename=filename, lines=lines)
-        istep_mom = []
+        istep_mom: list[np.ndarray] = []
         for _i, line in enumerate(lines):
             line = line.strip()
             if istep_trigger in line:
@@ -816,7 +863,9 @@ class Outcar:
         return dip_moms
 
     @staticmethod
-    def get_nelect(filename="OUTCAR", lines=None):
+    def get_nelect(
+        filename: str = "OUTCAR", lines: Optional[list[str]] = None
+    ) -> Optional[float]:
         """
         Returns the number of electrons in the simulation
 
@@ -834,9 +883,10 @@ class Outcar:
             line = line.strip()
             if nelect_trigger in line:
                 return float(line.split()[2])
+        return None
 
     @staticmethod
-    def get_cpu_time(filename="OUTCAR", lines=None):
+    def get_cpu_time(filename: str = "OUTCAR", lines: Optional[list[str]] = None):
         """
         Returns the total CPU time in seconds
 
@@ -856,7 +906,7 @@ class Outcar:
                 return float(line.split()[-1])
 
     @staticmethod
-    def get_user_time(filename="OUTCAR", lines=None):
+    def get_user_time(filename: str = "OUTCAR", lines: Optional[list[str]] = None):
         """
         Returns the User time in seconds
 
@@ -876,7 +926,7 @@ class Outcar:
                 return float(line.split()[-1])
 
     @staticmethod
-    def get_system_time(filename="OUTCAR", lines=None):
+    def get_system_time(filename: str = "OUTCAR", lines: Optional[list[str]] = None):
         """
         Returns the system time in seconds
 
@@ -896,7 +946,7 @@ class Outcar:
                 return float(line.split()[-1])
 
     @staticmethod
-    def get_elapsed_time(filename="OUTCAR", lines=None):
+    def get_elapsed_time(filename: str = "OUTCAR", lines: Optional[list[str]] = None):
         """
         Returns the elapsed time in seconds
 
@@ -916,7 +966,7 @@ class Outcar:
                 return float(line.split()[-1])
 
     @staticmethod
-    def get_memory_used(filename="OUTCAR", lines=None):
+    def get_memory_used(filename: str = "OUTCAR", lines: Optional[list[str]] = None):
         """
         Returns the maximum memory used during the simulation in kB
 
@@ -936,7 +986,9 @@ class Outcar:
                 return float(line.split()[-1])
 
     @staticmethod
-    def get_number_of_atoms(filename="OUTCAR", lines=None):
+    def get_number_of_atoms(
+        filename: str = "OUTCAR", lines: Optional[list[str]] = None
+    ) -> int:
         """
         Returns the number of ions in the simulation
 
@@ -960,14 +1012,16 @@ class Outcar:
             )
 
     @staticmethod
-    def get_band_properties(filename="OUTCAR", lines=None):
+    def get_band_properties(
+        filename: str = "OUTCAR", lines: Optional[list[str]] = None
+    ):
         fermi_trigger = "E-fermi"
         fermi_trigger_indices, lines = _get_trigger(
             lines=lines, filename=filename, trigger=fermi_trigger
         )
         fermi_level_list = []
-        vbm_level_dict = OrderedDict()
-        cbm_level_dict = OrderedDict()
+        vbm_level_dict: OrderedDict[int, list[float]] = OrderedDict()
+        cbm_level_dict: OrderedDict[int, list[float]] = OrderedDict()
         for ind in fermi_trigger_indices:
             fermi_level_list.append(float(lines[ind].strip().split()[2]))
         band_trigger = "band No.  band energies     occupation"
@@ -1042,7 +1096,9 @@ class Outcar:
         )
 
     @staticmethod
-    def get_elastic_constants(filename="OUTCAR", lines=None):
+    def get_elastic_constants(
+        filename: str = "OUTCAR", lines: Optional[list[str]] = None
+    ):
         lines = _get_lines_from_file(filename=filename, lines=lines)
         trigger_indices = _get_trigger(
             lines=lines,
@@ -1063,7 +1119,11 @@ class Outcar:
 
     @staticmethod
     def _get_positions_and_forces_parser(
-        lines, trigger_indices, n_atoms, pos_flag=True, force_flag=True
+        lines: list[str],
+        trigger_indices: list[int],
+        n_atoms: int,
+        pos_flag: bool = True,
+        force_flag: bool = True,
     ):
         """
         Parser to get the forces and or positions for every ionic step from the OUTCAR file
@@ -1103,9 +1163,10 @@ class Outcar:
             return np.array(positions)
         elif force_flag:
             return np.array(forces)
+        return np.array([])
 
     @staticmethod
-    def _get_cells_praser(lines, trigger_indices):
+    def _get_cells_praser(lines: list[str], trigger_indices: list[int]):
         """
         Parser to get the cell size and shape for every ionic step from the OUTCAR file
 
@@ -1137,7 +1198,9 @@ class Outcar:
             return
 
     @staticmethod
-    def get_energy_components(filename="OUTCAR", lines=None):
+    def get_energy_components(
+        filename: str = "OUTCAR", lines: Optional[list[str]] = None
+    ):
         """
         Gets the individual components of the free energy energy for every electronic step from the OUTCAR file
 
@@ -1200,11 +1263,16 @@ class Outcar:
             return []
 
 
-def _clean_line(line):
+def _clean_line(line: str) -> str:
     return line.replace("-", " -")
 
 
-def _get_trigger(trigger, filename=None, lines=None, return_lines=True):
+def _get_trigger(
+    trigger: str,
+    filename: Optional[str] = None,
+    lines: Optional[list[str]] = None,
+    return_lines: bool = True,
+):
     """
     Find the lines where a specific trigger appears.
 
@@ -1224,7 +1292,9 @@ def _get_trigger(trigger, filename=None, lines=None, return_lines=True):
         return trigger_indicies
 
 
-def _split_indices(ind_ionic_lst, ind_elec_lst):
+def _split_indices(
+    ind_ionic_lst: list[int], ind_elec_lst: list[int]
+) -> list[np.ndarray]:
     """
     Combine ionic pattern matches and electronic pattern matches
 
@@ -1246,7 +1316,7 @@ def _split_indices(ind_ionic_lst, ind_elec_lst):
     ]
 
 
-def _get_lines_from_file(filename, lines=None):
+def _get_lines_from_file(filename: Optional[str], lines: Optional[list[str]] = None):
     """
     If lines is None read the lines from the file with the filename filename.
 
@@ -1258,6 +1328,8 @@ def _get_lines_from_file(filename, lines=None):
         list: list of lines
     """
     if lines is None:
+        if filename is None:
+            raise ValueError("Either filename or lines must be provided")
         with open(filename, errors="ignore") as f:
             lines = f.readlines()
     return lines

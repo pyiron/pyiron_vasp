@@ -29,13 +29,13 @@ class Oszicar:
     def __init__(self):
         self.parse_dict = {}
 
-    def from_file(self, filename="OSZICAR"):
+    def from_file(self, filename: str = "OSZICAR"):
         with open(filename, errors="ignore") as f:
             lines = f.readlines()
         self.parse_dict["energy_pot"] = self.get_energy_pot(lines)
 
     @staticmethod
-    def get_energy_pot(lines):
+    def get_energy_pot(lines: list[str]) -> np.ndarray:
         trigger = "F="
         energy_list = []
         for i, line in enumerate(lines):

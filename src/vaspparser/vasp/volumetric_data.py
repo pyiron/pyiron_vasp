@@ -4,6 +4,7 @@
 import math
 import os
 import warnings
+from typing import Optional
 
 import numpy as np
 
@@ -40,7 +41,7 @@ class VaspVolumetricData(VolumetricData):
         self._diff_data = None
         self._total_data = None
 
-    def from_file(self, filename, normalize=True):
+    def from_file(self, filename: str, normalize: bool = True):
         """
         Parsing the contents of from a file
 
@@ -65,7 +66,7 @@ class VaspVolumetricData(VolumetricData):
                 self._diff_data = vol_data_list[1]
 
     @staticmethod
-    def _read_vol_data_old(filename, normalize=True):
+    def _read_vol_data_old(filename: str, normalize: bool = True):
         """
         Convenience method to parse a generic volumetric static file in the vasp like format.
         Used by subclasses for parsing the file. This routine is adapted from the pymatgen vasp VolumetricData
@@ -84,20 +85,22 @@ class VaspVolumetricData(VolumetricData):
             )
             return None, None
         poscar_read = False
-        poscar_string = []
-        dataset = []
-        all_dataset = []
-        dim = None
-        dimline = None
+        poscar_string: list[str] = []
+        dataset: Optional[np.ndarray] = None
+        all_dataset: list[np.ndarray] = []
+        dim: Optional[list[int]] = None
+        dimline: Optional[str] = None
         read_dataset = False
         ngrid_pts = 0
         data_count = 0
         atoms = None
-        volume = None
+        volume = 1.0
         with open(filename) as f:
             for line in f:
                 line = line.strip()
                 if read_dataset:
+                    if dataset is None or dim is None:
+                        raise ValueError("Volumetric grid is not initialized")
                     toks = line.split()
                     for tok in toks:
                         if data_count < ngrid_pts:
@@ -155,7 +158,7 @@ class VaspVolumetricData(VolumetricData):
                 data = {"total": all_dataset[0] / volume}
                 return atoms, [data["total"]]
 
-    def _read_vol_data(self, filename, normalize=True):
+    def _read_vol_data(self, filename: str, normalize: bool = True):
         """
         Parses the VASP volumetric type files (CHGCAR, LOCPOT, PARCHG etc). Rather than looping over individual values,
         this function utilizes numpy indexing resulting in a parsing efficiency of at least 10%.
@@ -173,14 +176,14 @@ class VaspVolumetricData(VolumetricData):
             warnings.warn("File:" + filename + "seems to be empty! ", stacklevel=2)
             return None, None
         with open(filename) as f:
-            struct_lines = []
+            struct_lines: list[str] = []
             get_grid = False
             n_x = 0
             n_y = 0
             n_z = 0
             n_grid = 0
             n_grid_str = None
-            total_data_list = []
+            total_data_list: list[np.ndarray] = []
             atoms = None
             for line in f:
                 strip_line = line.strip()
@@ -192,11 +195,12 @@ class VaspVolumetricData(VolumetricData):
                     n_x, n_y, n_z = [int(val) for val in strip_line.split()]
                     n_grid = n_x * n_y * n_z
                     n_grid_str = " ".join([str(val) for val in [n_x, n_y, n_z]])
-                    load_txt = np.genfromtxt(f, max_rows=int(n_grid / 5))
-                    load_txt = np.hstack(load_txt)
+                    load_txt = np.asarray(
+                        np.genfromtxt(f, max_rows=int(n_grid / 5))
+                    ).ravel()
                     if n_grid % 5 != 0:
                         add_line = np.genfromtxt(f, max_rows=1)
-                        load_txt = np.append(load_txt, np.hstack(add_line))
+                        load_txt = np.append(load_txt, np.asarray(add_line).ravel())
                     total_data = self._fastest_index_reshape(load_txt, [n_x, n_y, n_z])
                     try:
                         atoms = atoms_from_string(struct_lines)
@@ -212,13 +216,12 @@ class VaspVolumetricData(VolumetricData):
                 elif atoms is not None:
                     grid_str = n_grid_str.replace(" ", "")
                     if grid_str == strip_line.replace(" ", ""):
-                        load_txt = np.genfromtxt(f, max_rows=int(n_grid / 5))
-                        load_txt = np.hstack(load_txt)
+                        load_txt = np.asarray(
+                            np.genfromtxt(f, max_rows=int(n_grid / 5))
+                        ).ravel()
                         if n_grid % 5 != 0:
                             add_line = np.genfromtxt(f, max_rows=1)
-                            load_txt = np.hstack(
-                                np.append(load_txt, np.hstack(add_line))
-                            )
+                            load_txt = np.append(load_txt, np.asarray(add_line).ravel())
                         total_data = self._fastest_index_reshape(
                             load_txt, [n_x, n_y, n_z]
                         )
@@ -236,7 +239,7 @@ class VaspVolumetricData(VolumetricData):
             return atoms, total_data_list
 
     @staticmethod
-    def _fastest_index_reshape(raw_data, grid):
+    def _fastest_index_reshape(raw_data: np.ndarray, grid: list):
         """
         Helper function to parse volumetric data with x-axis as the fastest index into a 3D numpy array
 
@@ -282,7 +285,7 @@ class VaspVolumetricData(VolumetricData):
     def diff_data(self, val):
         self._diff_data = val
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         volumetric_data_dict = {
             "TYPE": str(type(self)),
             "total": self.total_data,
