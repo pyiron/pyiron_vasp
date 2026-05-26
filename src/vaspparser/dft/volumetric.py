@@ -1,6 +1,8 @@
 # Copyright (c) Max-Planck-Institut für Eisenforschung GmbH - Computational Materials Design (CM) Department
 # Distributed under the terms of "New BSD License", see the LICENSE file.
 
+from typing import List, Optional, Tuple, Union
+
 import numpy as np
 from ase.atoms import Atoms
 
@@ -31,12 +33,12 @@ class VolumetricData:
 
     """
 
-    def __init__(self):
-        self._total_data = None
-        self._atoms = None
+    def __init__(self) -> None:
+        self._total_data: Optional[np.ndarray] = None
+        self._atoms: Optional[Atoms] = None
 
     @property
-    def atoms(self):
+    def atoms(self) -> Optional[Atoms]:
         """
         The structure related to the volumeric data
 
@@ -47,18 +49,18 @@ class VolumetricData:
         return self._atoms
 
     @atoms.setter
-    def atoms(self, val):
+    def atoms(self, val: Optional[Atoms]) -> None:
         self._atoms = val
 
     @property
-    def total_data(self):
+    def total_data(self) -> Optional[np.ndarray]:
         """
         numpy.ndarray: The Nx x Ny x Nz sized array for the total data
         """
         return self._total_data
 
     @total_data.setter
-    def total_data(self, val):
+    def total_data(self, val: Optional[Union[np.ndarray, list]]) -> None:
         if not (isinstance(val, (np.ndarray, list))):
             raise TypeError(
                 "Attribute total_data should be a numpy.ndarray instance or a list and "
@@ -71,7 +73,7 @@ class VolumetricData:
         self._total_data = val
 
     @staticmethod
-    def gauss_f(d, fwhm=0.529177):
+    def gauss_f(d: float, fwhm: float = 0.529177) -> float:
         """
         Generates a Gaussian distribution for a given distance and full width half maximum value
 
@@ -89,8 +91,11 @@ class VolumetricData:
 
     @staticmethod
     def dist_between_two_grid_points(
-        target_grid_point, n_grid_at_center, lattice, grid_shape
-    ):
+        target_grid_point: Union[np.ndarray, list],
+        n_grid_at_center: Union[np.ndarray, list],
+        lattice: Union[np.ndarray, list],
+        grid_shape: Union[tuple, list, np.ndarray],
+    ) -> float:
         """
         Calculates the distance between a target grid point and another grid point
 
@@ -114,11 +119,15 @@ class VolumetricData:
             np.subtract(target_grid_point, n_grid_at_center), unit_dist_in_grid
         )
         dist = np.linalg.norm(dn)
-        return dist
+        return float(dist)
 
     def spherical_average_potential(
-        self, structure, spherical_center, rad=2, fwhm=0.529177
-    ):
+        self,
+        structure: Atoms,
+        spherical_center: Union[list, np.ndarray],
+        rad: float = 2,
+        fwhm: float = 0.529177,
+    ) -> float:
         """
         Calculates the spherical average about a given point in space
 
@@ -132,6 +141,8 @@ class VolumetricData:
             float: Spherical average at the target center
 
         """
+        if self._total_data is None:
+            raise ValueError("total_data is not set")
         grid_shape = self._total_data.shape
 
         # Position of center of sphere at grid coordinates
@@ -149,13 +160,13 @@ class VolumetricData:
         ]
 
         # Range of grids to be considered within the provided radius w.r.t. center of sphere
-        num_grid_in_sph = [[], []]
+        num_grid_in_sph: List[List[int]] = [[], []]
         for i, dist in enumerate(dist_in_grid):
             num_grid_in_sph[0].append(n_grid_at_center[i] - int(np.ceil(rad / dist)))
             num_grid_in_sph[1].append(n_grid_at_center[i] + int(np.ceil(rad / dist)))
 
         sph_avg_tmp = []
-        weight = 0
+        weight = 0.0
         for k in range(num_grid_in_sph[0][0], num_grid_in_sph[1][0]):
             for l in range(num_grid_in_sph[0][1], num_grid_in_sph[1][1]):
                 for m in range(num_grid_in_sph[0][2], num_grid_in_sph[1][2]):
@@ -179,8 +190,12 @@ class VolumetricData:
 
     @staticmethod
     def dist_between_two_grid_points_cyl(
-        target_grid_point, n_grid_at_center, lattice, grid_shape, direction_of_cyl
-    ):
+        target_grid_point: Union[np.ndarray, list],
+        n_grid_at_center: Union[np.ndarray, list],
+        lattice: Union[np.ndarray, list],
+        grid_shape: Union[tuple, list, np.ndarray],
+        direction_of_cyl: int,
+    ) -> float:
         """
         Distance between a target grid point and the center of a cylinder
 
@@ -212,11 +227,16 @@ class VolumetricData:
         else:
             print("check the direction of cylindrical axis")
         dist = np.linalg.norm(dn)
-        return dist
+        return float(dist)
 
     def cylindrical_average_potential(
-        self, structure, spherical_center, axis_of_cyl, rad=2, fwhm=0.529177
-    ):
+        self,
+        structure: Atoms,
+        spherical_center: Union[list, np.ndarray],
+        axis_of_cyl: int,
+        rad: float = 2,
+        fwhm: float = 0.529177,
+    ) -> float:
         """
         Calculates the cylindrical average about a given point in space
 
@@ -231,6 +251,8 @@ class VolumetricData:
             float: Cylindrical average at the target center
 
         """
+        if self._total_data is None:
+            raise ValueError("total_data is not set")
         grid_shape = self._total_data.shape
 
         # Position of center of sphere at grid coordinates
@@ -248,7 +270,7 @@ class VolumetricData:
         ]
 
         # Range of grids to be considered within the provided radius w.r.t. center of sphere
-        num_grid_in_cyl = [[], []]
+        num_grid_in_cyl: List[List[int]] = [[], []]
 
         for i, dist in enumerate(dist_in_grid):
             if i == axis_of_cyl:
@@ -263,7 +285,7 @@ class VolumetricData:
                 )
 
         cyl_avg_tmp = []
-        weight = 0
+        weight = 0.0
         for k in range(num_grid_in_cyl[0][0], num_grid_in_cyl[1][0]):
             for l in range(num_grid_in_cyl[0][1], num_grid_in_cyl[1][1]):
                 for m in range(num_grid_in_cyl[0][2], num_grid_in_cyl[1][2]):
@@ -290,7 +312,7 @@ class VolumetricData:
 
         return cyl_avg
 
-    def get_average_along_axis(self, ind=2):
+    def get_average_along_axis(self, ind: int = 2) -> np.ndarray:
         """
         Get the lateral average along a certain axis direction. This function is adapted from the pymatgen vasp
         VolumetricData class
@@ -303,6 +325,8 @@ class VolumetricData:
         Returns:
             numpy.ndarray: A 1D vector with the laterally averaged values of the volumetric data
         """
+        if self._total_data is None:
+            raise ValueError("total_data is not set")
         if ind == 0:
             return np.average(np.average(self._total_data, axis=1), 1)
         elif ind == 1:
@@ -310,7 +334,9 @@ class VolumetricData:
         else:
             return np.average(np.average(self._total_data, axis=0), 0)
 
-    def write_cube_file(self, filename="cube_file.cube", cell_scaling=1.0):
+    def write_cube_file(
+        self, filename: str = "cube_file.cube", cell_scaling: float = 1.0
+    ) -> None:
         """
         Write the volumetric data into the CUBE file format
 
@@ -319,37 +345,41 @@ class VolumetricData:
             cell_scaling (float): Scale the cell by this fraction
 
         """
-        if self._atoms is None:
+        atoms = self.atoms
+        if atoms is None:
             raise ValueError(
                 "The volumetric data object must have a valid structure assigned to it before writing "
                 "to the cube format"
             )
-        data = self.total_data
+        total_data = self.total_data
+        if total_data is None:
+            raise ValueError("total_data is not set")
+        data = total_data
         n_x, n_y, _ = data.shape
         origin = np.zeros(3)
         flattened_data = np.hstack(
             [data[i, j, :] for i in range(n_x) for j in range(n_y)]
         )
-        n_atoms = len(self.atoms)
+        n_atoms = len(atoms)
         total_lines = int(len(flattened_data) / 6) * 6
         reshaped_data = np.reshape(flattened_data[0:total_lines], (-1, 6))
         last_line = [flattened_data[total_lines:]]
         head_array = np.zeros((4, 4))
         head_array[0] = np.append([n_atoms], origin)
         head_array[1:, 0] = data.shape
-        head_array[1:, 1:] = self.atoms.cell / data.shape * cell_scaling
-        position_array = np.zeros((len(self.atoms.positions), 5))
-        position_array[:, 0] = self.atoms.get_atomic_numbers()
-        position_array[:, 2:] = self.atoms.positions
+        head_array[1:, 1:] = atoms.cell / data.shape * cell_scaling
+        position_array = np.zeros((len(atoms.positions), 5))
+        position_array[:, 0] = atoms.get_atomic_numbers()
+        position_array[:, 2:] = atoms.positions
         with open(filename, "w") as f:
             f.write("Cube file generated by pyiron (http://pyiron.org) \n")
             f.write("z is the fastest index \n")
-            np.savetxt(f, head_array, fmt="%4d %.6f %.6f %.6f")
-            np.savetxt(f, position_array, fmt="%4d %.6f %.6f %.6f %.6f")
-            np.savetxt(f, reshaped_data, fmt="%.5e")
-            np.savetxt(f, last_line, fmt="%.5e")
+            np.savetxt(f, head_array, fmt="%4d %.6f %.6f %.6f")  # type: ignore
+            np.savetxt(f, position_array, fmt="%4d %.6f %.6f %.6f %.6f")  # type: ignore
+            np.savetxt(f, reshaped_data, fmt="%.5e")  # type: ignore
+            np.savetxt(f, last_line, fmt="%.5e")  # type: ignore
 
-    def read_cube_file(self, filename="cube_file.cube"):
+    def read_cube_file(self, filename: str = "cube_file.cube") -> None:
         """
         Generate data from a CUBE file
 
@@ -376,7 +406,7 @@ class VolumetricData:
                 )
             end_int = n_atoms + 6 + int(np.prod(grid_shape) / 6)
             data = np.genfromtxt(lines[n_atoms + 6 : end_int])
-            data_flatten = np.hstack(data)
+            data_flatten = np.hstack(data)  # type: ignore
             if np.prod(grid_shape) % 6 > 0:
                 data_flatten = np.append(
                     data_flatten, [float(val) for val in lines[end_int].split()]
@@ -384,7 +414,9 @@ class VolumetricData:
             n_x, n_y, n_z = grid_shape
             self._total_data = data_flatten.reshape((n_x, n_y, n_z))
 
-    def write_vasp_volumetric(self, filename="CHGCAR", normalize=False):
+    def write_vasp_volumetric(
+        self, filename: str = "CHGCAR", normalize: bool = False
+    ) -> None:
         """
         Writes volumetric data into a VASP CHGCAR format
 
@@ -393,19 +425,25 @@ class VolumetricData:
             normalize (bool): True if the data is to be normalized by the volume
 
         """
-        write_poscar(structure=self.atoms, filename=filename)
+        atoms = self.atoms
+        if atoms is None:
+            raise ValueError("atoms is not set")
+        total_data = self.total_data
+        if total_data is None:
+            raise ValueError("total_data is not set")
+        write_poscar(structure=atoms, filename=filename)
         with open(filename, "a") as f:
             f.write("\n")
-            f.write(" ".join(list(np.array(self.total_data.shape, dtype=str))))
+            f.write(" ".join(list(np.array(total_data.shape, dtype=str))))
             f.write("\n")
-            _, n_y, n_z = self.total_data.shape
+            _, n_y, n_z = total_data.shape
             flattened_data = np.hstack(
-                [self.total_data[:, i, j] for j in range(n_z) for i in range(n_y)]
+                [total_data[:, i, j] for j in range(n_z) for i in range(n_y)]
             )
             if normalize:
-                flattened_data /= self.atoms.get_volume()
+                flattened_data /= atoms.get_volume()
             num_lines = int(len(flattened_data) / 5) * 5
             reshaped_data = np.reshape(flattened_data[0:num_lines], (-1, 5))
-            np.savetxt(f, reshaped_data, fmt="%.12f")
+            np.savetxt(f, reshaped_data, fmt="%.12f")  # type: ignore
             if len(flattened_data) % 5 > 0:
-                np.savetxt(f, [flattened_data[num_lines:]], fmt="%.12f")
+                np.savetxt(f, [flattened_data[num_lines:]], fmt="%.12f")  # type: ignore

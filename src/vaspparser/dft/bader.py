@@ -3,8 +3,10 @@
 
 import os
 import subprocess
+from typing import Optional, Tuple
 
 import numpy as np
+from ase.atoms import Atoms
 
 from vaspparser.vasp.volumetric_data import VaspVolumetricData
 
@@ -28,7 +30,7 @@ class Bader:
     .. _Bader code: http://theory.cm.utexas.edu/henkelman/code/bader
     """
 
-    def __init__(self, structure, working_directory):
+    def __init__(self, structure: Atoms, working_directory: str) -> None:
         """
         Initialize the Bader module
 
@@ -38,7 +40,7 @@ class Bader:
         self._working_directory = working_directory
         self._structure = structure
 
-    def _create_cube_files(self):
+    def _create_cube_files(self) -> None:
         """
         Create CUBE format files of the total and valce charges to be used by the Bader program
         """
@@ -52,7 +54,9 @@ class Bader:
             filename=os.path.join(self._working_directory, "total_charge.CUBE")
         )
 
-    def compute_bader_charges(self, extra_arguments=None):
+    def compute_bader_charges(
+        self, extra_arguments: Optional[str] = None
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Run Bader analysis on the output from the DFT job
 
@@ -73,14 +77,14 @@ class Bader:
         self._remove_cube_files()
         return self._parse_charge_vol()
 
-    def _remove_cube_files(self):
+    def _remove_cube_files(self) -> None:
         """
         Delete created CUBE files
         """
         os.remove(os.path.join(self._working_directory, "valence_charge.CUBE"))
         os.remove(os.path.join(self._working_directory, "total_charge.CUBE"))
 
-    def _parse_charge_vol(self):
+    def _parse_charge_vol(self) -> Tuple[np.ndarray, np.ndarray]:
         """
         Parse Bader charges and volumes
 
@@ -92,7 +96,7 @@ class Bader:
         return parse_charge_vol_file(structure=self._structure, filename=filename)
 
 
-def call_bader(foldername, extra_arguments=None):
+def call_bader(foldername: str, extra_arguments: Optional[str] = None) -> int:
     """
     Call the Bader program inside a given folder
 
@@ -110,7 +114,9 @@ def call_bader(foldername, extra_arguments=None):
     return subprocess.call(cmd, shell=True, cwd=foldername)
 
 
-def parse_charge_vol_file(structure, filename="ACF.dat"):
+def parse_charge_vol_file(
+    structure: Atoms, filename: str = "ACF.dat"
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Parse charges and volumes from the output file
 
@@ -129,7 +135,9 @@ def parse_charge_vol_file(structure, filename="ACF.dat"):
     return charges, volumes
 
 
-def get_valence_and_total_charge_density(working_directory):
+def get_valence_and_total_charge_density(
+    working_directory: str,
+) -> Tuple[VaspVolumetricData, VaspVolumetricData]:
     """
     Gives the valence and total charge densities
 

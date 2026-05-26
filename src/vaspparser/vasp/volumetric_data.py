@@ -4,9 +4,10 @@
 import math
 import os
 import warnings
-from typing import Optional
+from typing import Optional, cast
 
 import numpy as np
+from ase.atoms import Atoms
 
 from vaspparser.dft.volumetric import VolumetricData
 from vaspparser.vasp.structure import (
@@ -121,14 +122,15 @@ class VaspVolumetricData(VolumetricData):
                         poscar_string.append(line)
                     elif line == "":
                         try:
-                            atoms = atoms_from_string(poscar_string)
+                            atoms = cast(Atoms, atoms_from_string(poscar_string))
                         except ValueError:
                             pot_str = filename.split("/")
                             pot_str[-1] = "POTCAR"
                             potcar_file = "/".join(pot_str)
                             species = get_species_list_from_potcar(potcar_file)
-                            atoms = atoms_from_string(
-                                poscar_string, species_list=species
+                            atoms = cast(
+                                Atoms,
+                                atoms_from_string(poscar_string, species_list=species),
                             )
                         volume = atoms.get_volume()
                         poscar_read = True
@@ -203,13 +205,15 @@ class VaspVolumetricData(VolumetricData):
                         load_txt = np.append(load_txt, np.asarray(add_line).ravel())
                     total_data = self._fastest_index_reshape(load_txt, [n_x, n_y, n_z])
                     try:
-                        atoms = atoms_from_string(struct_lines)
+                        atoms = cast(Atoms, atoms_from_string(struct_lines))
                     except ValueError:
                         pot_str = filename.split("/")
                         pot_str[-1] = "POTCAR"
                         potcar_file = "/".join(pot_str)
                         species = get_species_list_from_potcar(potcar_file)
-                        atoms = atoms_from_string(struct_lines, species_list=species)
+                        atoms = cast(
+                            Atoms, atoms_from_string(struct_lines, species_list=species)
+                        )
                     if normalize:
                         total_data /= atoms.get_volume()
                     total_data_list.append(total_data)
