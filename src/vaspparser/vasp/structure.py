@@ -5,7 +5,7 @@ import os
 import re
 import warnings
 from collections import OrderedDict
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 from ase.atoms import Atoms
@@ -24,10 +24,10 @@ __date__ = "Sep 1, 2017"
 
 
 def read_atoms(
-    filename: str="CONTCAR",
-    return_velocities: bool=False,
-    species_list: Optional[list[str]] = None,
-    species_from_potcar: bool=False,
+    filename: str = "CONTCAR",
+    return_velocities: bool = False,
+    species_list: Optional[list[Any]] = None,
+    species_from_potcar: bool = False,
 ):
     """
     Routine to read structural static from a POSCAR type file
@@ -60,7 +60,7 @@ def read_atoms(
     )
 
 
-def get_species_list_from_potcar(filename: str="POTCAR"):
+def get_species_list_from_potcar(filename: str = "POTCAR"):
     """
     Generates the species list from a POTCAR type file
 
@@ -105,7 +105,12 @@ def get_number_species_atoms(structure: Atoms):
     return count
 
 
-def write_poscar(structure: Atoms, filename: str="POSCAR", write_species: bool=True, cartesian: bool=True):
+def write_poscar(
+    structure: Atoms,
+    filename: str = "POSCAR",
+    write_species: bool = True,
+    cartesian: bool = True,
+):
     """
     Writes a POSCAR type file from a structure object
 
@@ -128,7 +133,9 @@ def write_poscar(structure: Atoms, filename: str="POSCAR", write_species: bool=T
         )
 
 
-def get_poscar_content(structure: Atoms, write_species: bool=True, cartesian: bool=True):
+def get_poscar_content(
+    structure: Atoms, write_species: bool = True, cartesian: bool = True
+):
     endline = "\n"
     selec_dyn = False
     line_lst = [
@@ -184,7 +191,11 @@ def get_poscar_content(structure: Atoms, write_species: bool=True, cartesian: bo
     return line_lst
 
 
-def atoms_from_string(string: list[str], read_velocities: bool=False, species_list: Optional[list[str]] = None):
+def atoms_from_string(
+    string: list[str],
+    read_velocities: bool = False,
+    species_list: Optional[list[Any]] = None,
+):
     """
     Routine to convert a string list read from a input/output structure file and convert into Atoms instance
 
@@ -199,7 +210,7 @@ def atoms_from_string(string: list[str], read_velocities: bool=False, species_li
     """
     string = [s.strip() for s in string]
     string_lower = [s.lower() for s in string]
-    atoms_dict = {}
+    atoms_dict: dict[str, Any] = {}
     atoms_dict["first_line"] = string[0]
     # del string[0]
     atoms_dict["selective_dynamics"] = False
@@ -222,7 +233,7 @@ def atoms_from_string(string: list[str], read_velocities: bool=False, species_li
     if "selective dynamics" in string_lower:
         atoms_dict["selective_dynamics"] = True
     no_of_species = len(string[5].split())
-    species_dict = OrderedDict()
+    species_dict: OrderedDict[str, dict[str, Any]] = OrderedDict()
     position_index = 7
     if atoms_dict["selective_dynamics"]:
         position_index += 1
@@ -236,8 +247,8 @@ def atoms_from_string(string: list[str], read_velocities: bool=False, species_li
     atoms_dict["species_dict"] = species_dict
     if "species" in atoms_dict["species_dict"]["species_0"]:
         position_index += 1
-    positions = []
-    selective_dynamics = []
+    positions: list[list[float]] = []
+    selective_dynamics: list[list[bool]] = []
     n_atoms = sum(
         [atoms_dict["species_dict"][key]["count"] for key in atoms_dict["species_dict"]]
     )
@@ -263,7 +274,7 @@ def atoms_from_string(string: list[str], read_velocities: bool=False, species_li
     except ValueError:
         atoms = _dict_to_atoms(atoms_dict, read_from_first_line=True)
     if atoms_dict["selective_dynamics"]:
-        constraints_dict = {
+        constraints_dict: dict[str, list[int]] = {
             label: []
             for label in ["TTT", "TTF", "FTT", "TFT", "TFF", "FFT", "FTF", "FFF"]
         }
@@ -335,7 +346,11 @@ def atoms_from_string(string: list[str], read_velocities: bool=False, species_li
         return atoms
 
 
-def _dict_to_atoms(atoms_dict: dict, species_list: Optional[list[str]] = None, read_from_first_line: bool = False):
+def _dict_to_atoms(
+    atoms_dict: dict,
+    species_list: Optional[list[Any]] = None,
+    read_from_first_line: bool = False,
+):
     """
     Function to convert a generated dict into an structure object
 
@@ -351,13 +366,14 @@ def _dict_to_atoms(atoms_dict: dict, species_list: Optional[list[str]] = None, r
     positions = atoms_dict["positions"]
     cell = atoms_dict["cell"]
     symbol = ""
-    elements = []
-    el_list = []
+    elements: list[np.ndarray] = []
     for i, sp_key in enumerate(atoms_dict["species_dict"].keys()):
         if species_list is not None:
             try:
-                el_list = np.array([species_list[i]])
-                el_list = np.tile(el_list, atoms_dict["species_dict"][sp_key]["count"])
+                el_list = np.tile(
+                    np.array([species_list[i]]),
+                    atoms_dict["species_dict"][sp_key]["count"],
+                )
                 if isinstance(species_list[i], str):
                     symbol += species_list[i] + str(
                         atoms_dict["species_dict"][sp_key]["count"]
@@ -371,8 +387,10 @@ def _dict_to_atoms(atoms_dict: dict, species_list: Optional[list[str]] = None, r
                     "Number of species in the specified species list does not match that in the file"
                 )
         elif "species" in atoms_dict["species_dict"][sp_key]:
-            el_list = np.array([atoms_dict["species_dict"][sp_key]["species"]])
-            el_list = np.tile(el_list, atoms_dict["species_dict"][sp_key]["count"])
+            el_list = np.tile(
+                np.array([atoms_dict["species_dict"][sp_key]["species"]]),
+                atoms_dict["species_dict"][sp_key]["count"],
+            )
             symbol += atoms_dict["species_dict"][sp_key]["species"]
             symbol += str(atoms_dict["species_dict"][sp_key]["count"])
         elif read_from_first_line:
@@ -381,8 +399,10 @@ def _dict_to_atoms(atoms_dict: dict, species_list: Optional[list[str]] = None, r
                 == len(atoms_dict["species_dict"].keys())
             ):
                 raise AssertionError()
-            el_list = np.array(atoms_dict["first_line"].split()[i])
-            el_list = np.tile(el_list, atoms_dict["species_dict"][sp_key]["count"])
+            el_list = np.tile(
+                np.array(atoms_dict["first_line"].split()[i]),
+                atoms_dict["species_dict"][sp_key]["count"],
+            )
             symbol += atoms_dict["first_line"].split()[i]
             symbol += str(atoms_dict["species_dict"][sp_key]["count"])
         elif species_list is None:
@@ -394,11 +414,11 @@ def _dict_to_atoms(atoms_dict: dict, species_list: Optional[list[str]] = None, r
     for ele in elements:
         for e in ele:
             elements_new.append(re.split("[^a-zA-Z]", e)[0])
-    elements = elements_new
+    atom_symbols = elements_new
     if is_absolute:
-        atoms = Atoms(elements, positions=positions, cell=cell, pbc=True)
+        atoms = Atoms(atom_symbols, positions=positions, cell=cell, pbc=True)
     else:
-        atoms = Atoms(elements, scaled_positions=positions, cell=cell, pbc=True)
+        atoms = Atoms(atom_symbols, scaled_positions=positions, cell=cell, pbc=True)
     return atoms
 
 

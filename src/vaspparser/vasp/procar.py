@@ -2,6 +2,7 @@
 # Distributed under the terms of "New BSD License", see the LICENSE file.
 
 from collections import OrderedDict
+from typing import Optional
 
 import numpy as np
 
@@ -62,8 +63,10 @@ class Procar:
         return es_obj
 
     @staticmethod
-    def _check_if_spin_polarized(line: str) -> bool:
-        pass
+    def _check_if_spin_polarized(line: str) -> Optional[bool]:
+        if "spin component" in line.lower():
+            return True
+        return None
 
     @staticmethod
     def _get_details(line):
@@ -93,8 +96,8 @@ class Procar:
         num_orbitals = len((lines[0].strip()).split()) - 2
         num_atoms = len(lines) - 2
         dos_matrix = np.zeros((num_atoms, num_orbitals))
-        orbital_resolved_dos = []
-        atom_resolved_dos = []
+        orbital_resolved_dos: list[float] = []
+        atom_resolved_dos: list[float] = []
         count = 0
         for i, line in enumerate(lines):
             line = line.strip()
@@ -109,6 +112,4 @@ class Procar:
             if i == len(lines) - 1:
                 orbital_resolved_dos = [float(val) for val in lst[1 : len(lst) - 1]]
 
-        atom_resolved_dos = np.array(atom_resolved_dos)
-        orbital_resolved_dos = np.array(orbital_resolved_dos)
-        return dos_matrix, orbital_resolved_dos, atom_resolved_dos
+        return dos_matrix, np.array(orbital_resolved_dos), np.array(atom_resolved_dos)
