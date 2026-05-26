@@ -1,7 +1,8 @@
 # Copyright (c) Max-Planck-Institut für Eisenforschung GmbH - Computational Materials Design (CM) Department
 # Distributed under the terms of "New BSD License", see the LICENSE file.
 
-from typing import Union, List, Tuple, Optional
+from typing import List, Optional, Tuple, Union
+
 import numpy as np
 from ase.atoms import Atoms
 

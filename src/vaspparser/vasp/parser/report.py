@@ -2,6 +2,7 @@
 # Distributed under the terms of "New BSD License", see the LICENSE file.
 
 from typing import Dict
+
 import numpy as np
 from scipy.integrate import cumulative_trapezoid
 

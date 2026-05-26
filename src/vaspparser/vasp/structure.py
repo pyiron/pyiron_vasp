@@ -5,7 +5,8 @@ import os
 import re
 import warnings
 from collections import OrderedDict
-from typing import Optional, Union, List, OrderedDict as OrderedDictType, Any, Dict
+from typing import Any, Dict, List, Optional, Union
+from typing import OrderedDict as OrderedDictType
 
 import numpy as np
 from ase.atoms import Atoms

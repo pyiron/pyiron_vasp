@@ -2,6 +2,7 @@
 # Distributed under the terms of "New BSD License", see the LICENSE file.
 
 from typing import Dict, List
+
 import numpy as np
 
 __author__ = "Sudarsan Surendralal"
