@@ -57,7 +57,10 @@ class Output:
         self._structure = atoms
 
     def collect(
-        self, directory: str=os.getcwd(), sorted_indices: Optional[np.ndarray]=None, es_class=ElectronicStructure
+        self,
+        directory: str = os.getcwd(),
+        sorted_indices: Optional[np.ndarray] = None,
+        es_class=ElectronicStructure,
     ):
         """
         Collects output from the working directory
