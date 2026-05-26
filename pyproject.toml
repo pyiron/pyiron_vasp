@@ -1,9 +1,9 @@
 [build-system]
-requires = ["ase", "defusedxml", "matplotlib", "numpy", "pandas", "scipy", "setuptools", "versioneer[toml]==0.29"]
-build-backend = "setuptools.build_meta"
+requires = ["ase", "defusedxml", "matplotlib", "numpy", "pandas", "scipy", "hatchling==1.29.0", "hatch-vcs==0.5.0"]
+build-backend = "hatchling.build"
 
 [project]
-name = "pyiron_vasp"
+name = "vaspparser"
 description = "Parser for the Vienna Ab initio Simulation Package (VASP)"
 authors = [
     { name = "Jan Janssen", email = "janssen@mpie.de" },
@@ -11,7 +11,7 @@ authors = [
 readme = "README.md"
 license = { file = "LICENSE" }
 keywords = ["pyiron"]
-requires-python = ">=3.9, <3.14"
+requires-python = ">=3.9, <3.15"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Topic :: Scientific/Engineering :: Physics",
@@ -23,38 +23,78 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "ase==3.25.0",
+    "ase==3.28.0",
     "defusedxml==0.7.1",
-    "numpy==2.2.4",
-    "pandas==2.3.1",
-    "scipy==1.16.0",
+    "numpy==2.4.3",
+    "pandas==3.0.2",
+    "scipy==1.17.1",
 ]
 dynamic = ["version"]
 
 [project.urls]
 Homepage = "https://pyiron.org"
-Documentation = "https://pyiron_vasp.readthedocs.io"
-Repository = "https://github.com/pyiron/pyiron_vasp"
+Documentation = "https://vaspparser.readthedocs.io"
+Repository = "https://github.com/pyiron/vaspparser"
 
 [project.optional-dependencies]
 plot = [
-    "matplotlib==3.10.3"
+    "matplotlib==3.10.8"
 ]
 
-[tool.setuptools.packages.find]
-include = ["pyiron_vasp*"]
+[tool.ruff]
+exclude = [".ci_support", "notebooks", "tests", "setup.py", "_version.py"]
 
-[tool.setuptools.package-data]
-"*" = ["data/*.csv"]
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+    # flake8-comprehensions
+    "C4",
+    # eradicate
+    "ERA",
+    # pylint
+    "PL",
+]
+ignore = [
+    # ignore line-length violations
+    "E501",
+]
 
-[tool.setuptools.dynamic]
-version = {attr = "pyiron_vasp.__version__"}
+[tool.hatch.build]
+include = [
+    "src/vaspparser"
+]
 
-[tool.versioneer]
-VCS = "git"
-style = "pep440-pre"
-versionfile_source = "pyiron_vasp/_version.py"
-parentdir_prefix = "pyiron_vasp"
-tag_prefix = "pyiron_vasp-"
+[tool.hatch.build.hooks.vcs]
+version-file = "src/vaspparser/_version.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/vaspparser"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "src/vaspparser"
+]
+
+[tool.hatch.version]
+source = "vcs"
+path = "src/vaspparser/_version.py"
+
+[tool.coverage.run]
+source = ["vaspparser"]
+command_line = "-m unittest discover tests/unit"
