@@ -3,6 +3,7 @@
 # Distributed under theterms of "New BSD License", see the LICENSE file.
 
 import os
+import tempfile
 import unittest
 import numpy as np
 from vaspparser.vasp.parser.report import Report
@@ -31,6 +32,16 @@ class TestReportParser(unittest.TestCase):
             np.array_equal(self.parser.parse_dict["cv"], np.array([0.1, 0.2]))
         )
         self.assertTrue(len(self.parser.parse_dict["free_energy"]) == 2)
+
+    def test_from_file_without_blue_moon_data(self):
+        with tempfile.NamedTemporaryFile("w", delete=False) as handle:
+            handle.write("header only\n<cc> 1 0.1 </cc>\n")
+            temp_file = handle.name
+        self.addCleanup(os.remove, temp_file)
+
+        self.parser.from_file(temp_file)
+
+        self.assertEqual(self.parser.parse_dict, {})
 
 
 if __name__ == "__main__":
