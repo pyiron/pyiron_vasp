@@ -5,14 +5,14 @@
 import unittest
 import os
 import shutil
-from vaspparser.vasp.output import (
-    Output,
-    parse_vasp_output,
-    get_final_structure_from_file,
-)
-from vaspparser.vasp.structure import read_atoms
 import numpy as np
 from ase.atoms import Atoms
+from vaspparser.vasp.output import (
+    Output,
+    get_final_structure_from_file,
+    parse_vasp_output,
+)
+from vaspparser.vasp.structure import read_atoms
 
 
 class TestMoreOutput(unittest.TestCase):
@@ -66,6 +66,63 @@ class TestMoreOutput(unittest.TestCase):
             get_final_structure_from_file(
                 working_directory=self.temp_dir, filename="non_existent_file.xyz"
             )
+
+    def test_get_final_structure_with_structure_and_sorted_indices(self):
+        structure = read_atoms(
+            os.path.join(self.full_job_sample_path, "POSCAR"), species_list=["Fe"]
+        )
+        expected_structure = read_atoms(
+            os.path.join(self.full_job_sample_path, "CONTCAR"),
+            species_list=structure.get_chemical_symbols(),
+        )
+        sorted_indices = np.array([1, 0])
+
+        final_structure = get_final_structure_from_file(
+            working_directory=self.full_job_sample_path,
+            filename="CONTCAR",
+            structure=structure,
+            sorted_indices=sorted_indices,
+        )
+
+        np.testing.assert_allclose(final_structure.cell.array, expected_structure.cell.array)
+        np.testing.assert_allclose(
+            final_structure.positions[sorted_indices], expected_structure.positions
+        )
+
+    def test_parse_vasp_output_with_successful_bader(self):
+        class MockBader:
+            def __init__(self, working_directory, structure):
+                self.working_directory = working_directory
+                self.structure = structure
+
+            def compute_bader_charges(self):
+                n_atoms = len(self.structure)
+                return np.arange(1, n_atoms + 1, dtype=float), np.arange(
+                    2, n_atoms + 2, dtype=float
+                )
+
+        bader_sample_path = os.path.join(self.vasp_test_files_path, "bader_test")
+
+        output_dict = parse_vasp_output(
+            working_directory=bader_sample_path,
+            bader_class=MockBader,
+        )
+
+        self.assertIn("bader_charges", output_dict["generic"]["dft"])
+        self.assertIn("bader_volumes", output_dict["generic"]["dft"])
+        expected_charges = np.arange(
+            1, len(output_dict["generic"]["dft"]["valence_charges"]) + 1, dtype=float
+        )
+        expected_volumes = np.arange(
+            2, len(output_dict["generic"]["dft"]["valence_charges"]) + 2, dtype=float
+        )
+        np.testing.assert_allclose(
+            output_dict["generic"]["dft"]["bader_volumes"], expected_volumes
+        )
+        np.testing.assert_allclose(
+            output_dict["generic"]["dft"]["bader_charges"],
+            output_dict["generic"]["dft"]["valence_charges"] - expected_charges,
+        )
 
 
 if __name__ == "__main__":
