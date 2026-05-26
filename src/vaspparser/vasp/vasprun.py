@@ -46,7 +46,7 @@ class Vasprun:
     def __init__(self):
         self.vasprun_dict = {}
 
-    def from_file(self, filename: str="vasprun.xml"):
+    def from_file(self, filename: str = "vasprun.xml"):
         """
         Parsing vasprun.xml from the working directory
 
