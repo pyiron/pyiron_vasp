@@ -2,6 +2,7 @@ import contextlib
 import os
 import posixpath
 import warnings
+from typing import Callable, Optional
 
 import numpy as np
 from ase.atoms import Atoms
@@ -49,14 +50,14 @@ class Output:
         return self._structure
 
     @structure.setter
-    def structure(self, atoms):
+    def structure(self, atoms: Atoms):
         """
         Setter for the output structure
         """
         self._structure = atoms
 
     def collect(
-        self, directory=os.getcwd(), sorted_indices=None, es_class=ElectronicStructure
+        self, directory: str=os.getcwd(), sorted_indices: Optional[np.ndarray]=None, es_class=ElectronicStructure
     ):
         """
         Collects output from the working directory
@@ -416,9 +417,9 @@ class VaspCollectError(ValueError):
 
 def parse_vasp_output(
     working_directory: str,
-    structure: Atoms = None,
-    sorted_indices: list = None,
-    read_atoms_funct: callable = read_atoms,
+    structure: Optional[Atoms] = None,
+    sorted_indices: Optional[list] = None,
+    read_atoms_funct: Callable = read_atoms,
     es_class=ElectronicStructure,
     bader_class=Bader,
     output_parser_class=Output,
@@ -495,12 +496,12 @@ def parse_vasp_output(
 
 
 def get_final_structure_from_file(
-    working_directory,
-    filename="CONTCAR",
-    structure=None,
-    sorted_indices=None,
-    read_atoms_funct=read_atoms,
-):
+    working_directory: str,
+    filename: str = "CONTCAR",
+    structure: Optional[Atoms] = None,
+    sorted_indices: Optional[list] = None,
+    read_atoms_funct: Callable = read_atoms,
+) -> Atoms:
     """
     Get the final structure of the simulation usually from the CONTCAR file
 
