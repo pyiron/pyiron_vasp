@@ -5,6 +5,7 @@ import os
 import re
 import warnings
 from collections import OrderedDict
+from typing import Optional
 
 import numpy as np
 from ase.atoms import Atoms
@@ -23,10 +24,10 @@ __date__ = "Sep 1, 2017"
 
 
 def read_atoms(
-    filename="CONTCAR",
-    return_velocities=False,
-    species_list=None,
-    species_from_potcar=False,
+    filename: str="CONTCAR",
+    return_velocities: bool=False,
+    species_list: Optional[list[str]] = None,
+    species_from_potcar: bool=False,
 ):
     """
     Routine to read structural static from a POSCAR type file
@@ -59,7 +60,7 @@ def read_atoms(
     )
 
 
-def get_species_list_from_potcar(filename="POTCAR"):
+def get_species_list_from_potcar(filename: str="POTCAR"):
     """
     Generates the species list from a POTCAR type file
 
@@ -83,7 +84,7 @@ def get_species_list_from_potcar(filename="POTCAR"):
     return species_list
 
 
-def get_number_species_atoms(structure):
+def get_number_species_atoms(structure: Atoms):
     """
     Returns a dictionary with the species in the structure and the corresponding count in the structure
 
@@ -104,7 +105,7 @@ def get_number_species_atoms(structure):
     return count
 
 
-def write_poscar(structure, filename="POSCAR", write_species=True, cartesian=True):
+def write_poscar(structure: Atoms, filename: str="POSCAR", write_species: bool=True, cartesian: bool=True):
     """
     Writes a POSCAR type file from a structure object
 
@@ -127,7 +128,7 @@ def write_poscar(structure, filename="POSCAR", write_species=True, cartesian=Tru
         )
 
 
-def get_poscar_content(structure, write_species=True, cartesian=True):
+def get_poscar_content(structure: Atoms, write_species: bool=True, cartesian: bool=True):
     endline = "\n"
     selec_dyn = False
     line_lst = [
@@ -183,7 +184,7 @@ def get_poscar_content(structure, write_species=True, cartesian=True):
     return line_lst
 
 
-def atoms_from_string(string, read_velocities=False, species_list=None):
+def atoms_from_string(string: list[str], read_velocities: bool=False, species_list: Optional[list[str]] = None):
     """
     Routine to convert a string list read from a input/output structure file and convert into Atoms instance
 
@@ -334,7 +335,7 @@ def atoms_from_string(string, read_velocities=False, species_list=None):
         return atoms
 
 
-def _dict_to_atoms(atoms_dict, species_list=None, read_from_first_line=False):
+def _dict_to_atoms(atoms_dict: dict, species_list: Optional[list[str]] = None, read_from_first_line: bool = False):
     """
     Function to convert a generated dict into an structure object
 
@@ -401,7 +402,7 @@ def _dict_to_atoms(atoms_dict, species_list=None, read_from_first_line=False):
     return atoms
 
 
-def vasp_sorter(structure):
+def vasp_sorter(structure: Atoms):
     """
     Routine to sort the indices of a structure as it would be when written to a POSCAR file
 
@@ -421,7 +422,7 @@ def vasp_sorter(structure):
     return np.array(sorted_indices)
 
 
-def manip_contcar(filename, new_filename, add_pos):
+def manip_contcar(filename: str, new_filename: str, add_pos: list | np.ndarray):
     """
     Manipulate a CONTCAR/POSCAR file by adding something to the positions
 

@@ -40,7 +40,7 @@ class VaspVolumetricData(VolumetricData):
         self._diff_data = None
         self._total_data = None
 
-    def from_file(self, filename, normalize=True):
+    def from_file(self, filename: str, normalize: bool=True):
         """
         Parsing the contents of from a file
 
@@ -65,7 +65,7 @@ class VaspVolumetricData(VolumetricData):
                 self._diff_data = vol_data_list[1]
 
     @staticmethod
-    def _read_vol_data_old(filename, normalize=True):
+    def _read_vol_data_old(filename: str, normalize: bool=True):
         """
         Convenience method to parse a generic volumetric static file in the vasp like format.
         Used by subclasses for parsing the file. This routine is adapted from the pymatgen vasp VolumetricData
@@ -155,7 +155,7 @@ class VaspVolumetricData(VolumetricData):
                 data = {"total": all_dataset[0] / volume}
                 return atoms, [data["total"]]
 
-    def _read_vol_data(self, filename, normalize=True):
+    def _read_vol_data(self, filename: str, normalize: bool=True):
         """
         Parses the VASP volumetric type files (CHGCAR, LOCPOT, PARCHG etc). Rather than looping over individual values,
         this function utilizes numpy indexing resulting in a parsing efficiency of at least 10%.
@@ -236,7 +236,7 @@ class VaspVolumetricData(VolumetricData):
             return atoms, total_data_list
 
     @staticmethod
-    def _fastest_index_reshape(raw_data, grid):
+    def _fastest_index_reshape(raw_data: np.ndarray, grid: list):
         """
         Helper function to parse volumetric data with x-axis as the fastest index into a 3D numpy array
 
@@ -282,7 +282,7 @@ class VaspVolumetricData(VolumetricData):
     def diff_data(self, val):
         self._diff_data = val
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         volumetric_data_dict = {
             "TYPE": str(type(self)),
             "total": self.total_data,

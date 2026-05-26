@@ -28,7 +28,7 @@ class Procar:
         self._is_spin_polarized = False
         self.dos_dict = OrderedDict()
 
-    def from_file(self, filename):
+    def from_file(self, filename: str):
         with open(filename, errors="ignore") as f:
             es_obj = ElectronicStructure()
             lines = f.readlines()
@@ -62,7 +62,7 @@ class Procar:
         return es_obj
 
     @staticmethod
-    def _check_if_spin_polarized(line):
+    def _check_if_spin_polarized(line: str) -> bool:
         pass
 
     @staticmethod
@@ -74,7 +74,7 @@ class Procar:
         return num_kpts, num_bands, num_atoms
 
     @staticmethod
-    def _get_kpoint_details(line):
+    def _get_kpoint_details(line: str):
         line = line.replace("-", " -")
         lst = line.split()
         kpt = [float(lst[i]) for i in range(4, 7)]
@@ -82,14 +82,14 @@ class Procar:
         return kpt, weight
 
     @staticmethod
-    def _get_band_details(line):
+    def _get_band_details(line: str):
         lst = line.split()
         eigval = float(lst[4])
         occ = float(lst[7])
         return eigval, occ
 
     @staticmethod
-    def _get_dos_matrix(lines):
+    def _get_dos_matrix(lines: list[str]):
         num_orbitals = len((lines[0].strip()).split()) - 2
         num_atoms = len(lines) - 2
         dos_matrix = np.zeros((num_atoms, num_orbitals))

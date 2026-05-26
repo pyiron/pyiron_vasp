@@ -24,7 +24,7 @@ class Report:
     def __init__(self):
         self.parse_dict = {}
 
-    def from_file(self, filename="REPORT"):
+    def from_file(self, filename: str="REPORT"):
         """
         Reads values from files and stores it in the `parse_dict` attribute
 
