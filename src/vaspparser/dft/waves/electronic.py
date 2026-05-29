@@ -458,7 +458,16 @@ class ElectronicStructure:
     def __getitem__(self, item):
         return self._output_dict[item]
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
+        """
+        Serialize the electronic structure to a dictionary.
+
+        Returns:
+            dict: Dictionary with keys ``"TYPE"``, ``"k_points"``, ``"k_weights"``,
+                ``"eig_matrix"``, ``"occ_matrix"``, optionally ``"efermi"``,
+                ``"structure"``, and a ``"dos"`` sub-dictionary containing total and
+                resolved DOS data.
+        """
         h_es = {
             "TYPE": str(type(self)),
             "k_points": self.kpoint_list,
@@ -637,6 +646,7 @@ class Kpoint:
 
     @property
     def value(self):
+        """list/numpy.ndarray: The k-point coordinates in reciprocal space."""
         return self._value
 
     @value.setter
@@ -645,6 +655,7 @@ class Kpoint:
 
     @property
     def weight(self):
+        """float: The integration weight of this k-point (sum of all weights equals 1)."""
         return self._weight
 
     @weight.setter
@@ -669,6 +680,10 @@ class Kpoint:
 
     @property
     def eig_occ_matrix(self):
+        """
+        numpy.ndarray: Array of shape (n_spins, n_bands, 2) where the last axis holds
+        [eigenvalue, occupancy] for each band.
+        """
         eig_occ_list = []
         for bands in self.bands.values():
             eig_occ_list.append([[b.eigenvalue, b.occupancy] for b in bands])

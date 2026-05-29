@@ -32,17 +32,23 @@ class Bader:
 
     def __init__(self, structure: Atoms, working_directory: str) -> None:
         """
-        Initialize the Bader module
+        Initialize the Bader module.
 
         Args:
-            job (pyiron_atomistics.dft.job.generic.GenericDFTJob): A DFT job instance (finished/converged job)
+            structure (ase.atoms.Atoms): The atomistic structure of the finished DFT calculation
+            working_directory (str): Path to the directory containing the VASP output files
+                (must contain AECCAR0 and AECCAR2 for total and valence charge densities)
         """
         self._working_directory = working_directory
         self._structure = structure
 
     def _create_cube_files(self) -> None:
         """
-        Create CUBE format files of the total and valce charges to be used by the Bader program
+        Create CUBE format files of the valence and total charge densities for use by the Bader program.
+
+        Reads AECCAR0 (core charge) and AECCAR2 (valence charge) from the working directory,
+        sums them to obtain the total charge density, and writes both the valence charge
+        (``valence_charge.CUBE``) and total charge (``total_charge.CUBE``) to disk.
         """
         cd_val, cd_total = get_valence_and_total_charge_density(
             working_directory=self._working_directory
@@ -139,10 +145,20 @@ def get_valence_and_total_charge_density(
     working_directory: str,
 ) -> Tuple[VaspVolumetricData, VaspVolumetricData]:
     """
-    Gives the valence and total charge densities
+    Read the valence and total all-electron charge densities from AECCAR files.
+
+    VASP writes the core charge density to AECCAR0 and the valence charge density
+    to AECCAR2 when ``LAECHG = .TRUE.`` is set in the INCAR. The total all-electron
+    charge density is the sum of both. These files are required for the Bader charge
+    partitioning scheme (Henkelman group).
+
+    Args:
+        working_directory (str): Path to the directory containing AECCAR0 and AECCAR2
 
     Returns:
-        tuple: The required charge densities
+        tuple:
+            VaspVolumetricData: Valence charge density (from AECCAR2)
+            VaspVolumetricData: Total all-electron charge density (AECCAR0 + AECCAR2)
     """
     cd_core = VaspVolumetricData()
     cd_total = VaspVolumetricData()

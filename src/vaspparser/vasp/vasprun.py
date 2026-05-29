@@ -64,7 +64,16 @@ class Vasprun:
 
     def parse_root_to_dict(self, filename: str):
         """
-        Parses from the main xml root.
+        Parse the vasprun.xml file and populate ``vasprun_dict`` with all data.
+
+        This method iterates over the XML tree using ``iterparse`` and dispatches
+        each recognized top-level element (generator, incar, kpoints, atominfo,
+        structure, calculation, parameters) to the appropriate sub-parser. After
+        parsing, positions are converted to fractional coordinates if they appear
+        to be in Cartesian, and all lists are converted to numpy arrays.
+
+        Args:
+            filename (str): Path to the vasprun.xml file
         """
         d = self.vasprun_dict
         d["scf_energies"] = []
@@ -464,7 +473,14 @@ class Vasprun:
         d["scf_dipole_moments"].append(scf_moments)
 
     @staticmethod
-    def parse_cce_to_dict(node, d):
+    def parse_cce_to_dict(node, d: dict):
+        """
+        Parse constrained-charge-equilibration (CCE) output from a vasprun.xml node.
+
+        Args:
+            node (xml.etree.Element): The CCE node to parse
+            d (dict): Dictionary to which the parsed values are appended
+        """
         for item in node:
             if item.attrib["name"] not in list(d.keys()):
                 d[item.attrib["name"]] = []
@@ -741,10 +757,18 @@ class Vasprun:
 
     def get_electronic_structure(self, es_class=ElectronicStructure):
         """
-        Get's the electronic structure from the VASP calculation
+        Construct an ElectronicStructure object from the parsed vasprun.xml data.
+
+        Transfers k-point list, k-point weights, eigenvalue matrix, occupancy matrix,
+        Fermi level, total DOS (if available), atom-resolved DOS (if LORBIT >= 10),
+        and projected DOS (if LORBIT = 11) into the returned object.
+
+        Args:
+            es_class: Class to instantiate for the electronic structure; defaults to
+                ``ElectronicStructure``.
 
         Returns:
-            pyiron.atomistics.waves.electronic.ElectronicStructure: The electronic structure object
+            ElectronicStructure: Populated electronic structure object
 
         """
         es_obj = es_class()
