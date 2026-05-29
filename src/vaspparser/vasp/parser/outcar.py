@@ -139,6 +139,16 @@ class Outcar:
             self.parse_dict["pressures"] = np.zeros(len(steps))
 
     def to_dict_minimal(self) -> dict:
+        """
+        Return a dictionary containing only the OUTCAR-specific quantities not available
+        from vasprun.xml. This is used when both output files are present to avoid
+        duplication.
+
+        Returns:
+            dict: Dictionary with keys: ``kin_energy_error``, ``broyden_mixing``,
+                  ``stresses``, ``irreducible_kpoints``, ``irreducible_kpoint_weights``,
+                  ``number_plane_waves``, ``energy_components``, ``resources``.
+        """
         output_dict = {}
         unique_quantities = [
             "kin_energy_error",
@@ -157,7 +167,17 @@ class Outcar:
 
     def get_vasp_version(
         self, filename: str = "OUTCAR", lines: Optional[list[str]] = None
-    ):
+    ) -> str:
+        """
+        Read the VASP version string from the first line of the OUTCAR file.
+
+        Args:
+            filename (str): Filename of the OUTCAR file to parse
+            lines (list/None): Lines already read from the file
+
+        Returns:
+            str: VASP version string (e.g. ``"vasp.6.3.2"`` or ``"vasp.5.4.4"``)
+        """
         lines = _get_lines_from_file(filename=filename, lines=lines)
         return lines[0].lstrip().split(sep=" ")[0]
 
@@ -446,16 +466,20 @@ class Outcar:
         filename: str = "OUTCAR", lines: Optional[list[str]] = None
     ) -> np.ndarray:
         """
-        Gets the total energy for every ionic step from the OUTCAR file
+        Gets the energy without entropy (E_wo_entrp) for every ionic step from the OUTCAR file.
+
+        This corresponds to the ``energy without entropy`` value printed by VASP in the
+        ``FREE ENERGIE OF THE ION-ELECTRON SYSTEM`` block and is equivalent to the
+        ``e_wo_entrp`` tag in vasprun.xml. It equals E_free + T*S, i.e. the total energy
+        before subtracting the electronic entropy contribution.
 
         Args:
             filename (str): Filename of the OUTCAR file to parse
             lines (list/None): lines read from the file
 
         Returns:
-            numpy.ndarray: A 1xM array of the total energies in $eV$
-
-            where M is the number of time steps
+            numpy.ndarray: A 1xM array of the energies without entropy in eV,
+            where M is the number of ionic steps
         """
 
         def get_energy_without_entropy_from_line(line):
@@ -478,16 +502,20 @@ class Outcar:
         filename: str = "OUTCAR", lines: Optional[list[str]] = None
     ) -> np.ndarray:
         """
-        Gets the total energy for every ionic step from the OUTCAR file
+        Gets the energy extrapolated to sigma->0 for every ionic step from the OUTCAR file.
+
+        VASP prints an extrapolated energy ``energy(sigma->0)`` which removes the
+        broadening-dependent entropy contribution. This is useful for comparing energies
+        computed with finite electronic temperature (ISMEAR, SIGMA) as it approximates
+        the T=0 energy. Corresponds to ``e_0_energy`` in vasprun.xml.
 
         Args:
             filename (str): Filename of the OUTCAR file to parse
             lines (list/None): lines read from the file
 
         Returns:
-            numpy.ndarray: A 1xM array of the total energies in $eV$
-
-            where M is the number of time steps
+            numpy.ndarray: A 1xM array of the sigma->0 extrapolated energies in eV,
+            where M is the number of ionic steps
         """
 
         def get_energy_sigma_0_from_line(line):
@@ -507,16 +535,19 @@ class Outcar:
         filename: str = "OUTCAR", lines: Optional[list[str]] = None
     ) -> np.ndarray:
         """
-        Gets the ediel_sol for every ionic step from the OUTCAR file
+        Gets the dielectric solvation energy (Ediel_sol) for every ionic step from the OUTCAR file.
+
+        This energy is only present when an implicit solvation model is used (e.g. with the
+        VASPsol or VASP built-in solvation via ``LSOL = .TRUE.``). It represents the
+        electrostatic interaction energy between the solute and the implicit solvent.
 
         Args:
             filename (str): Filename of the OUTCAR file to parse
             lines (list/None): lines read from the file
 
         Returns:
-            numpy.ndarray: A 1xM array of the total energies in $eV$
-
-            where M is the number of time steps
+            numpy.ndarray: A 1xM array of the solvation energies in eV,
+            where M is the number of ionic steps
         """
 
         def get_ediel_sol_from_line(line):
@@ -1015,6 +1046,23 @@ class Outcar:
     def get_band_properties(
         filename: str = "OUTCAR", lines: Optional[list[str]] = None
     ):
+        """
+        Extract the Fermi level, valence band maximum (VBM) and conduction band minimum (CBM)
+        at every ionic step from the OUTCAR file.
+
+        The values are derived from the ``band No.  band energies  occupation`` tables
+        printed in the OUTCAR after each self-consistent cycle.
+
+        Args:
+            filename (str): Filename of the OUTCAR file to parse
+            lines (list/None): Lines already read from the file
+
+        Returns:
+            tuple:
+                numpy.ndarray: Fermi levels (eV) for each ionic step
+                numpy.ndarray: VBM values (eV), shape (n_spins, n_ionic_steps)
+                numpy.ndarray: CBM values (eV), shape (n_spins, n_ionic_steps)
+        """
         fermi_trigger = "E-fermi"
         fermi_trigger_indices, lines = _get_trigger(
             lines=lines, filename=filename, trigger=fermi_trigger
@@ -1099,6 +1147,21 @@ class Outcar:
     def get_elastic_constants(
         filename: str = "OUTCAR", lines: Optional[list[str]] = None
     ):
+        """
+        Read the elastic stiffness tensor from the OUTCAR file.
+
+        The elastic constants are computed by VASP when ``IBRION=6`` is set in the INCAR.
+        VASP prints the full 6x6 Voigt-notation elastic moduli matrix under the heading
+        ``TOTAL ELASTIC MODULI (kBar)``; this method converts those values to GPa.
+
+        Args:
+            filename (str): Filename of the OUTCAR file to parse
+            lines (list/None): Lines already read from the file
+
+        Returns:
+            numpy.ndarray or None: A 6x6 array of elastic constants in GPa in Voigt notation
+            (order: xx, yy, zz, xy, yz, xz), or None if no elastic constants are found.
+        """
         lines = _get_lines_from_file(filename=filename, lines=lines)
         trigger_indices = _get_trigger(
             lines=lines,

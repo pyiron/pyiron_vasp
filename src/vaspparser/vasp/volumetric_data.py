@@ -290,6 +290,14 @@ class VaspVolumetricData(VolumetricData):
         self._diff_data = val
 
     def to_dict(self) -> dict:
+        """
+        Serialize the volumetric data into a dictionary.
+
+        Returns:
+            dict: Dictionary with keys ``"TYPE"`` (class name string), ``"total"``
+                (3D numpy array of total volumetric data), and optionally ``"diff"``
+                (3D numpy array of spin-difference data for CHGCAR spin-polarized runs).
+        """
         volumetric_data_dict = {
             "TYPE": str(type(self)),
             "total": self.total_data,

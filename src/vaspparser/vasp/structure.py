@@ -137,6 +137,22 @@ def write_poscar(
 def get_poscar_content(
     structure: Atoms, write_species: bool = True, cartesian: bool = True
 ) -> List[str]:
+    """
+    Generate the lines of a POSCAR-format file from a structure object.
+
+    Atoms are written grouped by species (alphabetical order) as required by VASP.
+    If the structure has ``FixCartesian`` constraints, the file is written in Direct
+    (fractional) coordinates with a ``Selective dynamics`` block.
+
+    Args:
+        structure (ase.atoms.Atoms): The structure to write
+        write_species (bool): If True, include the species line (VASP5+ format)
+        cartesian (bool): If True, write Cartesian coordinates; otherwise Direct.
+            Overridden to False when selective dynamics are present.
+
+    Returns:
+        list: Lines of the POSCAR file as strings (each ending with ``\\n``)
+    """
     endline = "\n"
     selec_dyn = False
     line_lst = [

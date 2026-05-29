@@ -32,12 +32,35 @@ class Oszicar:
         self.parse_dict: Dict[str, np.ndarray] = dict()
 
     def from_file(self, filename: str = "OSZICAR") -> None:
+        """
+        Parse and store relevant quantities from the OSZICAR file into parse_dict.
+
+        The OSZICAR file written by VASP contains the convergence information for each
+        electronic and ionic step. This method extracts the free energy (F) printed at
+        the end of each ionic step.
+
+        Args:
+            filename (str): Path to the OSZICAR file to parse
+        """
         with open(filename, "r", errors="ignore") as f:
             lines = f.readlines()
         self.parse_dict["energy_pot"] = self.get_energy_pot(lines)
 
     @staticmethod
     def get_energy_pot(lines: List[str]) -> np.ndarray:
+        """
+        Extract the free energy F at the end of each ionic step from OSZICAR lines.
+
+        The OSZICAR file lists the free energy (F=) printed after each ionic step's SCF
+        convergence. This value corresponds to the free energy printed in the OUTCAR as
+        ``FREE ENERGIE OF THE ION-ELECTRON SYSTEM``.
+
+        Args:
+            lines (list): Lines read from the OSZICAR file
+
+        Returns:
+            numpy.ndarray: Array of free energies (eV) for each ionic step
+        """
         trigger = "F="
         energy_list = []
         for i, line in enumerate(lines):

@@ -29,7 +29,22 @@ class Procar:
         self._is_spin_polarized = False
         self.dos_dict = OrderedDict()
 
-    def from_file(self, filename: str):
+    def from_file(self, filename: str) -> ElectronicStructure:
+        """
+        Parse a VASP PROCAR file and return the electronic structure.
+
+        The PROCAR file is written when ``LORBIT = 10`` or ``LORBIT = 11`` is set in the
+        INCAR. It contains the k-point coordinates and weights, band eigenvalues and
+        occupancies, and the projection of the wave functions onto spherical harmonics
+        centered on each ion (orbital- and atom-resolved DOS weights).
+
+        Args:
+            filename (str): Path to the PROCAR file
+
+        Returns:
+            ElectronicStructure: Populated electronic structure object with k-points,
+                bands, eigenvalues, occupancies, and atom/orbital-resolved DOS matrices
+        """
         with open(filename, errors="ignore") as f:
             es_obj = ElectronicStructure()
             lines = f.readlines()
@@ -64,12 +79,30 @@ class Procar:
 
     @staticmethod
     def _check_if_spin_polarized(line: str) -> Optional[bool]:
+        """
+        Check whether a PROCAR line indicates a spin-polarized calculation.
+
+        Args:
+            line (str): A line from the PROCAR file
+
+        Returns:
+            bool or None: True if the line contains a spin-component marker, else None
+        """
         if "spin component" in line.lower():
             return True
         return None
 
     @staticmethod
-    def _get_details(line):
+    def _get_details(line: str):
+        """
+        Parse the header line of a PROCAR file to get the number of k-points, bands and atoms.
+
+        Args:
+            line (str): The header line containing ``# of k-points: N  # of bands: M  # of ions: K``
+
+        Returns:
+            tuple: (num_kpts, num_bands, num_atoms) as integers
+        """
         lst = line.split()
         num_kpts = int(lst[3])
         num_bands = int(lst[7])
@@ -78,6 +111,17 @@ class Procar:
 
     @staticmethod
     def _get_kpoint_details(line: str):
+        """
+        Parse a k-point header line from the PROCAR file.
+
+        Args:
+            line (str): A line of the form ``k-point N :  kx ky kz  weight= w``
+
+        Returns:
+            tuple:
+                list: k-point coordinates [kx, ky, kz] in reciprocal coordinates
+                float: weight of the k-point
+        """
         line = line.replace("-", " -")
         lst = line.split()
         kpt = [float(lst[i]) for i in range(4, 7)]
@@ -86,6 +130,17 @@ class Procar:
 
     @staticmethod
     def _get_band_details(line: str):
+        """
+        Parse a band header line from the PROCAR file.
+
+        Args:
+            line (str): A line of the form ``band N # energy E # occ. O``
+
+        Returns:
+            tuple:
+                float: eigenvalue (eV)
+                float: occupancy
+        """
         lst = line.split()
         eigval = float(lst[4])
         occ = float(lst[7])
@@ -93,6 +148,24 @@ class Procar:
 
     @staticmethod
     def _get_dos_matrix(lines: list[str]):
+        """
+        Parse the atom-orbital projection block for a single band from the PROCAR file.
+
+        Each band block in the PROCAR lists the wavefunction projection onto spherical
+        harmonics for each ion, followed by a ``tot`` line with orbital sums and an overall
+        total. This method extracts the per-atom per-orbital matrix, the orbital-resolved
+        totals, and the atom-resolved totals.
+
+        Args:
+            lines (list): Lines of the projection block for a single band,
+                including the header and the ``tot`` summary line
+
+        Returns:
+            tuple:
+                numpy.ndarray: Shape (n_atoms, n_orbitals) - per-atom, per-orbital projections
+                numpy.ndarray: Shape (n_orbitals,) - sum over atoms for each orbital
+                numpy.ndarray: Shape (n_atoms,) - sum over orbitals for each atom
+        """
         num_orbitals = len((lines[0].strip()).split()) - 2
         num_atoms = len(lines) - 2
         dos_matrix = np.zeros((num_atoms, num_orbitals))

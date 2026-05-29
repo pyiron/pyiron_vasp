@@ -351,7 +351,23 @@ class Output:
             )
         self.generic_output.bands = self.electronic_structure
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
+        """
+        Serialize the parsed VASP output into a nested dictionary.
+
+        The returned dictionary contains the following top-level keys (when available):
+
+        - ``"description"``: human-readable label for this output object
+        - ``"generic"``: positions, forces, cells, energies, and DFT-specific quantities
+        - ``"structure"``: final atomistic structure as a dictionary
+        - ``"electrostatic_potential"``: LOCPOT data (total and optional diff)
+        - ``"charge_density"``: CHGCAR data (total and optional spin diff)
+        - ``"electronic_structure"``: k-points, eigenvalues, occupancies, and DOS data
+        - ``"outcar"``: OUTCAR-specific quantities not available from vasprun.xml
+
+        Returns:
+            dict: Hierarchical dictionary of parsed VASP output
+        """
         output_dict = {
             "description": self.description,
             "generic": self.generic_output.to_dict(),
@@ -395,14 +411,26 @@ class GenericOutput:
         self._bands = ElectronicStructure()
 
     @property
-    def bands(self):
+    def bands(self) -> ElectronicStructure:
+        """ElectronicStructure: The electronic band structure object."""
         return self._bands
 
     @bands.setter
-    def bands(self, val):
+    def bands(self, val: ElectronicStructure):
         self._bands = val
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
+        """
+        Serialize the generic and DFT-specific output into a dictionary.
+
+        The returned dictionary merges ``log_dict`` (generic quantities such as forces,
+        positions, energies, cells) with a ``"dft"`` sub-dictionary containing
+        DFT-specific quantities (magnetization, Fermi level lists, SCF energies, etc.)
+        and optionally a ``"bands"`` key with the electronic structure.
+
+        Returns:
+            dict: Dictionary of all generic and DFT output quantities
+        """
         go_dict, dft_dict = {}, {}
         for key, val in self.log_dict.items():
             go_dict[key] = val
@@ -415,6 +443,8 @@ class GenericOutput:
 
 
 class VaspCollectError(ValueError):
+    """Raised when VASP output files are present but cannot be parsed correctly."""
+
     pass
 
 
@@ -428,15 +458,33 @@ def parse_vasp_output(
     output_parser_class=Output,
 ) -> dict:
     """
-    Parse the VASP output in the working_directory and return it as hierachical dictionary.
+    Parse the VASP output in the working_directory and return it as a hierarchical dictionary.
+
+    This is the primary entry point for parsing a finished VASP calculation. The function
+    reads vasprun.xml (preferred) and/or OUTCAR, OSZICAR, LOCPOT, CHGCAR, PROCAR, and
+    CONTCAR/POSCAR files as available. If both vasprun.xml and OUTCAR are present, vasprun.xml
+    is used for energies, forces, positions, and electronic structure, while unique OUTCAR
+    quantities (stresses, elastic constants, Broyden mixing mesh, etc.) supplement the result.
+    Bader charge analysis is performed automatically when AECCAR0 and AECCAR2 are present.
 
     Args:
-        working_directory (str): directory of the VASP calculation
-        structure (Atoms): atomistic structure as optional input for matching the output to the input of the calculation
-        sorted_indices (list): list of indices used to sort the atomistic structure
+        working_directory (str): Path to the directory containing the VASP output files
+        structure (Atoms): Input atomistic structure. If None, it is read from CONTCAR/POSCAR.
+        sorted_indices (list/numpy.ndarray): Permutation indices mapping VASP atom order
+            (grouped by species) to the order in ``structure``. Computed automatically if None.
+        read_atoms_funct (callable): Function used to read structure files; defaults to
+            ``read_atoms`` which parses POSCAR/CONTCAR format.
+        es_class: Class used to store electronic structure data; defaults to
+            ``ElectronicStructure``.
+        bader_class: Class used for Bader charge analysis; defaults to ``Bader``.
+        output_parser_class: Class used to aggregate all output; defaults to ``Output``.
 
     Returns:
-        dict: hierarchical output dictionary
+        dict: Hierarchical output dictionary as returned by ``Output.to_dict()``.
+
+    Raises:
+        VaspCollectError: If required output files are found but cannot be parsed.
+        OSError: If no OUTCAR or vasprun.xml is present in working_directory.
     """
     output_parser = output_parser_class()
     if structure is None or len(structure) == 0:
@@ -508,13 +556,27 @@ def get_final_structure_from_file(
     read_atoms_funct: Callable = read_atoms,
 ) -> Atoms:
     """
-    Get the final structure of the simulation usually from the CONTCAR file
+    Read the final structure from a POSCAR-format file (typically CONTCAR).
+
+    The CONTCAR file written by VASP at the end of a relaxation or MD run contains the
+    final ionic positions, cell vectors, and optionally predictor-corrector velocities.
+    If ``structure`` is provided, its atom ordering is preserved and only the cell and
+    positions are updated; otherwise the structure is read entirely from the file.
 
     Args:
-        filename (str): Path to the CONTCAR file in VASP
+        working_directory (str): Path to the directory containing the structure file
+        filename (str): Name of the structure file to read (default: ``"CONTCAR"``)
+        structure (Atoms): Reference input structure used to set the species list and
+            atom ordering. If None, species are read directly from the file.
+        sorted_indices (list/numpy.ndarray): Permutation indices mapping the VASP atom
+            order to the order in ``structure``. Computed from ``structure`` if None.
+        read_atoms_funct (callable): Function for parsing POSCAR-format files
 
     Returns:
-        pyiron.atomistics.structure.atoms.Atoms: The final structure
+        ase.atoms.Atoms: The final structure with updated positions and cell
+
+    Raises:
+        OSError: If the file cannot be read or the positions are inconsistent
     """
     filename = posixpath.join(working_directory, filename)
     if structure is not None and sorted_indices is None:
