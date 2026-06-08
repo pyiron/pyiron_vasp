@@ -28,8 +28,8 @@ classifiers = [
 dependencies = [
     "ase==3.28.0",
     "defusedxml==0.7.1",
-    "numpy==2.4.3",
-    "pandas==3.0.2",
+    "numpy==2.4.6",
+    "pandas==3.0.3",
     "scipy==1.17.1",
 ]
 dynamic = ["version"]
@@ -41,7 +41,7 @@ Repository = "https://github.com/pyiron/vaspparser"
 
 [project.optional-dependencies]
 plot = [
-    "matplotlib==3.10.8"
+    "matplotlib==3.10.9"
 ]
 
 [tool.ruff]
