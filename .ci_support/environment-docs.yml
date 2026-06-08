@@ -8,9 +8,9 @@ dependencies:
 - setuptools
 - ase =3.28.0
 - defusedxml =0.7.1
-- matplotlib-base =3.10.8
-- numpy =2.4.3
-- pandas =3.0.2
+- matplotlib-base =3.10.9
+- numpy =2.4.6
+- pandas =3.0.3
 - scipy =1.17.1
 - jupyter-book =1.0.0
 - hatchling =1.30.1
