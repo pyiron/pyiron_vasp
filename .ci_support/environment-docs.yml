@@ -6,7 +6,7 @@ dependencies:
 - sphinx_rtd_theme
 - myst-parser
 - setuptools
-- ase =3.28.0
+- ase =3.29.0
 - defusedxml =0.7.1
 - matplotlib-base =3.10.9
 - numpy =2.4.6
