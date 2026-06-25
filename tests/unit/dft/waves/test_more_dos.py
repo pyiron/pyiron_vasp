@@ -32,6 +32,15 @@ class TestMoreDos(unittest.TestCase):
         except Exception as e:
             self.fail(f"plot_total_dos raised an exception: {e}")
 
+    def test_plot_orbital_resolved_dos_success(self):
+        dos = Dos(es_obj=self.mock_es)
+        # mock grand_dos_matrix only has 4 orbitals, restrict orbital_dict to match
+        dos.orbital_dict = {"s": [0], "p": [1, 2, 3]}
+        try:
+            dos.plot_orbital_resolved_dos()
+        except Exception as e:
+            self.fail(f"plot_orbital_resolved_dos raised an exception: {e}")
+
     def test_plot_orbital_resolved_dos_no_resolved(self):
         self.mock_es.grand_dos_matrix = None
         dos = Dos(es_obj=self.mock_es)

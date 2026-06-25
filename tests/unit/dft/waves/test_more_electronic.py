@@ -243,6 +243,28 @@ class TestMoreElectronicStructure(unittest.TestCase):
         self.es_obj.efermi = 0.0
         self.assertIn("Is a metal: False", str(self.es_obj))
 
+    def test_eg_vbm_cbm_setters(self):
+        self.es_obj.eg = [1.5]
+        self.assertEqual(self.es_obj._eg, [1.5])
+        self.es_obj.vbm = [-2.0]
+        self.assertEqual(self.es_obj._vbm, [-2.0])
+        self.es_obj.cbm = [3.0]
+        self.assertEqual(self.es_obj._cbm, [3.0])
+
+    def test_grand_dos_matrix_lazy_build(self):
+        self.es_obj.add_kpoint(value=[0, 0, 0], weight=1)
+        self.es_obj.kpoints[0].add_band(eigenvalue=-1.0, occupancy=1.0, spin=0)
+        self.es_obj.kpoints[0].bands[0][0].resolved_dos_matrix = np.ones((2, 3))
+        grand_dos_matrix = self.es_obj.grand_dos_matrix
+        self.assertEqual(grand_dos_matrix.shape, (1, 1, 1, 2, 3))
+        self.assertTrue(np.array_equal(grand_dos_matrix[0, 0, 0], np.ones((2, 3))))
+
+    def test_get_spin_resolved_dos_success(self):
+        self.es_obj.dos_energies = np.array([1, 2, 3])
+        self.es_obj.dos_densities = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]])
+        rdos = self.es_obj.get_spin_resolved_dos(spin_indices=1)
+        self.assertTrue(np.array_equal(rdos, np.array([0.4, 0.5, 0.6])))
+
     def test_kpoint_eig_occ_matrix(self):
         kpt = Kpoint()
         kpt.add_band(eigenvalue=-1.0, occupancy=1.0, spin=0)
