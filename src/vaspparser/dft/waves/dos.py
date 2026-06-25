@@ -97,7 +97,9 @@ class Dos:
         for spin in range(len(self.energies)):
             for key, val in self.orbital_dict.items():
                 r_dos = self.get_orbital_resolved_dos(val)
-                plt.plot(self.energies, r_dos, label=key + f"spin {spin}", **kwargs)
+                plt.plot(
+                    self.energies[spin], r_dos, label=key + f"spin {spin}", **kwargs
+                )
         plot.legend()
         return plot
 

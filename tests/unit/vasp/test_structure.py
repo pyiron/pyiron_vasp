@@ -8,13 +8,16 @@ import posixpath
 import numpy as np
 
 from ase.atoms import Atoms
-from ase.constraints import FixCartesian
+from ase.constraints import FixAtoms, FixCartesian
 from vaspparser.vasp.structure import (
     read_atoms,
     write_poscar,
     vasp_sorter,
     atoms_from_string,
     manip_contcar,
+    get_poscar_content,
+    get_species_list_from_potcar,
+    _dict_to_atoms,
 )
 import warnings
 
@@ -251,6 +254,98 @@ class TestVaspStructure(unittest.TestCase):
         self.assertEqual(new_struct.positions[new_struct.symbols.indices()["O"], 2], 8)
         os.remove("simple_water")
         os.remove("simple_water_new")
+
+    def test_get_species_list_from_potcar(self):
+        potcar_file = os.path.join(
+            self.file_location,
+            "../../static/vasp_test_files/full_job_sample/POTCAR",
+        )
+        species_list = get_species_list_from_potcar(potcar_file)
+        self.assertEqual(species_list, ["Fe"])
+
+    def test_read_atoms_species_from_potcar_empty(self):
+        poscar_path = posixpath.join(self.file_location, "POSCAR_potcar_test")
+        with open(poscar_path, "w") as f:
+            f.write(
+                "Fe\n1.0\n10.0 0.0 0.0\n0.0 10.0 0.0\n0.0 0.0 10.0\n1\n"
+                "Direct\n0.0 0.0 0.0\n"
+            )
+        potcar_path = posixpath.join(self.file_location, "POTCAR")
+        with open(potcar_path, "w") as f:
+            f.write("This POTCAR has no VRHFIN entry\n")
+        try:
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                atoms = read_atoms(filename=poscar_path, species_from_potcar=True)
+                self.assertEqual(len(atoms), 1)
+                self.assertTrue(
+                    any(
+                        "Unable to read species information from POTCAR"
+                        in str(warn.message)
+                        for warn in w
+                    )
+                )
+        finally:
+            os.remove(poscar_path)
+            os.remove(potcar_path)
+
+    def test_get_poscar_content_unsupported_constraint(self):
+        struct = self.structure.copy()
+        struct.constraints = [FixAtoms(indices=[0])]
+        with self.assertRaises(ValueError):
+            get_poscar_content(structure=struct)
+
+    def test_atoms_from_string_all_selective_dynamics_combinations(self):
+        lines = [
+            "Fe",
+            "1.0",
+            "10.0 0.0 0.0",
+            "0.0 10.0 0.0",
+            "0.0 0.0 10.0",
+            "8",
+            "Selective dynamics",
+            "Direct",
+            "0.0 0.0 0.0 T T T",
+            "0.1 0.1 0.1 T T F",
+            "0.2 0.2 0.2 T F T",
+            "0.3 0.3 0.3 T F F",
+            "0.4 0.4 0.4 F T T",
+            "0.5 0.5 0.5 F T F",
+            "0.6 0.6 0.6 F F T",
+            "0.7 0.7 0.7 F F F",
+        ]
+        atoms = atoms_from_string(lines)
+        self.assertEqual(len(atoms), 8)
+        self.assertEqual(len(atoms.constraints), 8)
+
+    def test_dict_to_atoms_species_list_index_error(self):
+        from collections import OrderedDict
+
+        atoms_dict = {
+            "relative": True,
+            "positions": np.array([[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]),
+            "cell": 10.0 * np.eye(3),
+            "species_dict": OrderedDict(
+                [("species_0", {"count": 1}), ("species_1", {"count": 1})]
+            ),
+        }
+        with self.assertRaises(ValueError):
+            _dict_to_atoms(atoms_dict, species_list=["Fe"])
+
+    def test_dict_to_atoms_first_line_assertion_error(self):
+        lines = [
+            "H",
+            "1.0",
+            "10.0 0.0 0.0",
+            "0.0 10.0 0.0",
+            "0.0 0.0 10.0",
+            "1 1",
+            "Direct",
+            "0.0 0.0 0.0",
+            "0.5 0.5 0.5",
+        ]
+        with self.assertRaises(AssertionError):
+            atoms_from_string(lines)
 
     def tearDown(self):
         pass
