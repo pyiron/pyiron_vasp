@@ -98,6 +98,56 @@ class TestVolumetricData(unittest.TestCase):
         self.assertTrue(os.path.exists(filename))
         os.remove(filename)
 
+    def test_spherical_average_no_total_data(self):
+        self.vol_data.atoms = self.atoms
+        with self.assertRaises(ValueError):
+            self.vol_data.spherical_average_potential(
+                structure=self.atoms, spherical_center=[0.5, 0.5, 0.5]
+            )
+
+    def test_cylindrical_average_no_total_data(self):
+        self.vol_data.atoms = self.atoms
+        with self.assertRaises(ValueError):
+            self.vol_data.cylindrical_average_potential(
+                structure=self.atoms, spherical_center=[0.5, 0.5, 0.5], axis_of_cyl=2
+            )
+
+    def test_get_average_along_axis_no_total_data(self):
+        with self.assertRaises(ValueError):
+            self.vol_data.get_average_along_axis(ind=0)
+
+    def test_get_average_along_axis_ind_1_and_default(self):
+        self.vol_data.total_data = np.ones((10, 10, 10))
+        avg_1 = self.vol_data.get_average_along_axis(ind=1)
+        self.assertTrue(np.allclose(avg_1, np.ones(10)))
+        avg_default = self.vol_data.get_average_along_axis(ind=2)
+        self.assertTrue(np.allclose(avg_default, np.ones(10)))
+
+    def test_write_cube_file_no_total_data(self):
+        self.vol_data.atoms = self.atoms
+        with self.assertRaises(ValueError):
+            self.vol_data.write_cube_file("test.cube")
+
+    def test_write_vasp_volumetric_no_atoms(self):
+        self.vol_data.total_data = self.data
+        with self.assertRaises(ValueError):
+            self.vol_data.write_vasp_volumetric(filename="test_chgcar")
+
+    def test_write_vasp_volumetric_no_total_data(self):
+        self.vol_data.atoms = self.atoms
+        with self.assertRaises(ValueError):
+            self.vol_data.write_vasp_volumetric(filename="test_chgcar")
+
+    def test_dist_between_two_grid_points_cyl_directions_0_and_1(self):
+        dist_0 = self.vol_data.dist_between_two_grid_points_cyl(
+            [0, 0, 0], [1, 1, 1], np.eye(3), (10, 10, 10), 0
+        )
+        self.assertAlmostEqual(dist_0, np.sqrt(0.02))
+        dist_1 = self.vol_data.dist_between_two_grid_points_cyl(
+            [0, 0, 0], [1, 1, 1], np.eye(3), (10, 10, 10), 1
+        )
+        self.assertAlmostEqual(dist_1, np.sqrt(0.02))
+
     def test_read_cube_file_one_atom(self):
         atoms = Atoms("H", positions=[[0, 0, 0]], cell=np.eye(3))
         self.vol_data.atoms = atoms

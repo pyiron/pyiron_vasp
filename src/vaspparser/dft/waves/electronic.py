@@ -435,14 +435,14 @@ class ElectronicStructure:
             dimension = (
                 self.n_spins,
                 len(self.kpoints),
-                len(self.kpoints[0].bands),
+                len(self.kpoints[0].bands[0]),
                 n_atoms,
                 n_orbitals,
             )
             self._grand_dos_matrix = np.zeros(dimension)
             for spin in range(self.n_spins):
                 for i, kpt in enumerate(self.kpoints):
-                    for j, band in enumerate(kpt.bands):
+                    for j, band in enumerate(kpt.bands[spin]):
                         self._grand_dos_matrix[spin, i, j, :, :] = (
                             band.resolved_dos_matrix
                         )

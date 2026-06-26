@@ -16,6 +16,10 @@ class TestProcarParser(unittest.TestCase):
             "../../static/vasp_test_files/PROCAR_for_test",
         )
 
+    def test_check_if_spin_polarized(self):
+        self.assertIsNone(self.parser._check_if_spin_polarized("dummy"))
+        self.assertTrue(self.parser._check_if_spin_polarized("spin component 1"))
+
     def test_from_file(self):
         self.assertIsNone(self.parser._check_if_spin_polarized("dummy"))
         es_obj = self.parser.from_file(self.file_path)
