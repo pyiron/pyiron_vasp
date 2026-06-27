@@ -23,8 +23,9 @@ class Dos:
 
     Args:
         n_bins (int): Number of histogram bins required to calculate the DOS
-        es_obj: The pyiron_atomistics.objects.waves.core.ElectronicStructure instance for which the DOS has to be computed
-        eigenvalues (list/numpy.ndarray): If es-obj is None, the eigenvalues could be specified as a list
+        es_obj (vaspparser.dft.waves.electronic.ElectronicStructure): The electronic structure instance for which
+            the DOS has to be computed
+        eigenvalues (list/numpy.ndarray): If es_obj is None, the eigenvalues could be specified as a list
 
     """
 
