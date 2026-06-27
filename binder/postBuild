@@ -1,0 +1,3 @@
+pip install . --no-deps --no-build-isolation
+
+cp notebooks/demo.ipynb .
