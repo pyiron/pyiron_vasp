@@ -1,0 +1,6 @@
+pip install . --no-deps --no-build-isolation
+
+cp notebooks/demo.ipynb .
+cp -r tests/static .
+
+rm -r .ci_support .github binder notebooks src tests .gitignore .pre-commit-config.yaml CITATION.cff CODE_OF_CONDUCT.md LICENSE MANIFEST.in pyproject.toml README.md
