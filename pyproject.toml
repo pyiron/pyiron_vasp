@@ -30,7 +30,7 @@ dependencies = [
     "defusedxml==0.7.1",
     "numpy==2.4.6",
     "pandas==3.0.3",
-    "scipy==1.17.1",
+    "scipy==1.18.0",
 ]
 dynamic = ["version"]
 
