@@ -59,6 +59,7 @@ class TestOutcar(unittest.TestCase):
             type_dict["pressures"] = np.ndarray
             type_dict["energies_int"] = np.ndarray
             type_dict["energies_zero"] = np.ndarray
+            type_dict["pullay_stress"] = np.ndarray
             parse_keys = self.outcar_parser.parse_dict.keys()
             for key, value in type_dict.items():
                 self.assertTrue(key in parse_keys)
@@ -1686,6 +1687,22 @@ class TestOutcar(unittest.TestCase):
             if int(filename.split("/OUTCAR_")[-1]) in [1, 2, 3, 4, 5, 6]:
                 temperatures = np.array([0.0])
                 self.assertEqual(temperatures.__str__(), output.__str__())
+
+    def test_get_pullay_stress(self):
+        def naive_parse(filename):
+            with open(filename) as f:
+                values = []
+                for l in f:
+                    if "Pullay stress" in l:
+                        values.append(float(l.split("Pullay stress =")[-1].split()[0]))
+                return np.array(values)
+
+        for filename in self.file_list:
+            with self.subTest(filename=filename):
+                output = self.outcar_parser.get_pullay_stress(filename)
+                self.assertIsInstance(output, np.ndarray)
+                expected = naive_parse(filename)
+                np.testing.assert_array_equal(output, expected)
 
     def test_get_steps(self):
         def naive_parse(filename):

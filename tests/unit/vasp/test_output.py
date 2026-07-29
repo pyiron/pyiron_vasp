@@ -52,6 +52,7 @@ class TestOutput(unittest.TestCase):
         self.assertIn("charge_density", output_dict)
         self.assertIn("electronic_structure", output_dict)
         self.assertIn("outcar", output_dict)
+        self.assertIn("pullay_stress", output_dict["outcar"])
 
     def test_parse_vasp_output(self):
         output_dict = parse_vasp_output(working_directory=self.full_job_sample_path)

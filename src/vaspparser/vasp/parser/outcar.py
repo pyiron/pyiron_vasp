@@ -64,6 +64,7 @@ class Outcar:
         cells = self.get_cells(filename=filename, lines=lines)
         steps = self.get_steps(filename=filename, lines=lines)
         temperatures = self.get_temperatures(filename=filename, lines=lines)
+        pullay_stress = self.get_pullay_stress(filename=filename, lines=lines)
         time = self.get_time(filename=filename, lines=lines)
         fermi_level = self.get_fermi_level(filename=filename, lines=lines)
         scf_moments = self.get_dipole_moments(filename=filename, lines=lines)
@@ -107,6 +108,7 @@ class Outcar:
         self.parse_dict["cells"] = cells
         self.parse_dict["steps"] = steps
         self.parse_dict["temperatures"] = temperatures
+        self.parse_dict["pullay_stress"] = pullay_stress
         self.parse_dict["time"] = time
         self.parse_dict["fermi_level"] = fermi_level
         self.parse_dict["scf_dipole_moments"] = scf_moments
@@ -147,7 +149,8 @@ class Outcar:
         Returns:
             dict: Dictionary with keys: ``kin_energy_error``, ``broyden_mixing``,
                   ``stresses``, ``irreducible_kpoints``, ``irreducible_kpoint_weights``,
-                  ``number_plane_waves``, ``energy_components``, ``resources``.
+                  ``number_plane_waves``, ``energy_components``, ``resources``,
+                  ``pullay_stress``.
         """
         output_dict = {}
         unique_quantities = [
@@ -159,6 +162,7 @@ class Outcar:
             "number_plane_waves",
             "energy_components",
             "resources",
+            "pullay_stress",
         ]
         for key in self.parse_dict:
             if key in unique_quantities:
@@ -717,6 +721,28 @@ class Outcar:
             r"[a-zA-Z]", r"", line_ngx.replace(" ", "").replace("\n", "")
         ).split("=")
         return np.prod([int(val) for val in str_list[1:]])
+
+    @staticmethod
+    def get_pullay_stress(filename: str = "OUTCAR", lines: Optional[list[str]] = None):
+        """
+        Gets the Pullay stress for every ionic step from the OUTCAR file
+
+        Args:
+            filename (str): Filename of the OUTCAR file to parse
+            lines (list/None): lines read from the file
+
+        Returns:
+            numpy.ndarray: An array of Pullay stress values in kB
+
+            where the length of the array equals the number of ionic steps
+        """
+        trigger = "Pullay stress ="
+        trigger_indices, lines = _get_trigger(
+            lines=lines, filename=filename, trigger=trigger
+        )
+        return np.array(
+            [float(lines[j].split(trigger)[-1].split()[0]) for j in trigger_indices]
+        )
 
     @staticmethod
     def get_temperatures(filename: str = "OUTCAR", lines: Optional[list[str]] = None):
