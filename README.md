@@ -111,7 +111,7 @@ from vaspparser.vasp.procar import Procar
 
 procar_es = Procar().from_file(filename="PROCAR")
 band = procar_es.kpoints[0].bands[0][0]
-band.atom_resolved_dos     # contribution of each atom to this band
+band.atom_resolved_dos  # contribution of each atom to this band
 band.orbital_resolved_dos  # contribution of each orbital (s, p, d, ...)
 ```
 
@@ -126,8 +126,10 @@ from vaspparser.vasp.volumetric_data import VaspVolumetricData
 
 charge_density = VaspVolumetricData()
 charge_density.from_file(filename="CHGCAR", normalize=True)
-charge_density.total_data.shape          # (Nx, Ny, Nz)
-charge_density.get_average_along_axis(ind=2)  # average over the ab-plane, as a function of c
+charge_density.total_data.shape  # (Nx, Ny, Nz)
+charge_density.get_average_along_axis(
+    ind=2
+)  # average over the ab-plane, as a function of c
 ```
 
 ### Bader charge analysis
